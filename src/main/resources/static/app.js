@@ -1,3 +1,4 @@
+const API_BASE = "https://wishlist-1-6omc.onrender.com";
 const activeUserEl = document.getElementById("active-user");
 const authModal = document.getElementById("auth-modal");
 const createModal = document.getElementById("create-modal");
@@ -45,7 +46,7 @@ function setAuthResult(el, message, isError = false) {
 }
 
 async function request(path, options = {}) {
-  const response = await fetch(path, { credentials: "same-origin", ...options });
+  const response = await fetch(`${API_BASE}${path}`, { credentials: "include", ...options });
   const text = await response.text();
   if (!response.ok) {
     let message = text || response.statusText;
