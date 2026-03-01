@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyWishlist</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <nav class="topbar">
+        <div class="brand">
+          <span class="brand-icon">🎁</span>
+          <span class="brand-name">Giftly</span>
+        </div>
+        <div class="nav-links">
+          <a href="#home" class="nav-link active">Home</a>
+          <a href="#my" class="nav-link">My Wishlists</a>
+        </div>
+        <div class="nav-actions">
+          <button class="ghost" id="auth-action">Sign In</button>
+        </div>
+      </nav>
+
+      <section id="home" class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Every gift tells a story</p>
+          <h1>Create wishlists for every occasion.</h1>
+          <p class="lede">
+            Recipients add gift ideas and share with friends. Friends mark items as purchased for joyful surprises.
+          </p>
+          <div class="hero-actions"></div>
+        </div>
+        <div class="hero-media">
+          <div class="hero-image"></div>
+        </div>
+      </section>
+
+      <section class="how" aria-label="How it works" data-logged-out>
+        <div class="section-head">
+          <h2>How it works</h2>
+          <p>Three simple steps to perfect gifting.</p>
+        </div>
+        <div class="card-grid">
+          <div class="info-card">
+            <div class="icon">🎀</div>
+            <h3>Create your list</h3>
+            <p>Add items you love to receive for any occasion.</p>
+          </div>
+          <div class="info-card">
+            <div class="icon">👥</div>
+            <h3>Share with friends</h3>
+            <p>Your friends can browse your wishlist and see what you're hoping for.</p>
+          </div>
+          <div class="info-card">
+            <div class="icon">❤️</div>
+            <h3>Gift with joy</h3>
+            <p>Friends mark items as purchased—no duplicate surprises.</p>
+          </div>
+        </div>
+        <button class="primary center" id="get-started">Get Started →</button>
+      </section>
+
+      <section id="my" class="section">
+        <div class="section-head row">
+          <div>
+            <h2>My Wishlists</h2>
+            <p>Create and manage your gift wishlists.</p>
+          </div>
+          <button class="primary" id="open-create-2">+ New Wishlist</button>
+        </div>
+        <div class="wishlist-grid">
+          <article class="wishlist-card" data-logged-out>
+            <div class="wishlist-cover cover-a"></div>
+            <div class="wishlist-body">
+              <span class="pill">Birthday</span>
+              <h3>My 30th Birthday</h3>
+              <div class="meta">
+                <span>Apr 15, 2026</span>
+                <span>1/3 purchased</span>
+              </div>
+              <div class="progress"><span style="width: 33%"></span></div>
+            </div>
+          </article>
+          <article class="wishlist-card" data-logged-out>
+            <div class="wishlist-cover cover-b"></div>
+            <div class="wishlist-body">
+              <span class="pill">Christmas</span>
+              <h3>Holiday Wishlist 2026</h3>
+              <div class="meta">
+                <span>Dec 25, 2026</span>
+                <span>0/2 purchased</span>
+              </div>
+              <div class="progress"><span style="width: 10%"></span></div>
+            </div>
+          </article>
+          <div id="my-occasion-cards" class="grid-contents hidden" data-logged-in></div>
+          <div id="my-occasion-empty" class="empty-state hidden" data-logged-in>
+            You have no wishlists yet. Create one to get started.
+          </div>
+        </div>
+      </section>
+
+      <section id="friends" class="section hidden"></section>
+
+    </div>
+
+    <div class="modal" id="auth-modal" aria-hidden="true">
+      <div class="modal-card">
+        <button class="close" id="close-auth">×</button>
+        <div class="auth-tabs" role="tablist" aria-label="Authentication">
+          <button class="auth-tab active" data-auth-tab="login" type="button">Login</button>
+          <button class="auth-tab" data-auth-tab="signup" type="button">Sign Up</button>
+        </div>
+
+        <div class="auth-panel" data-auth-panel="login" role="tabpanel">
+          <h3>Login</h3>
+          <label>
+            Email
+            <input id="login-email" type="email" placeholder="alex@example.com" />
+          </label>
+          <label>
+            Password
+            <input id="login-password" type="password" placeholder="••••••" />
+          </label>
+          <button class="primary" id="login-btn">Login</button>
+          <div id="login-result" class="result" role="status"></div>
+        </div>
+
+        <div class="auth-panel" data-auth-panel="signup" role="tabpanel" hidden>
+          <h3>Sign Up</h3>
+          <label>
+            Email
+            <input id="new-user-email" type="email" placeholder="alex@example.com" />
+          </label>
+          <label>
+            Password
+            <input id="new-user-password" type="password" placeholder="••••••" />
+          </label>
+          <button class="ghost" id="create-user">Create Account</button>
+          <div id="create-user-result" class="result" role="status"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="create-modal" aria-hidden="true">
+      <div class="modal-card wide">
+        <button class="close" id="close-create">×</button>
+        <div>
+          <h3>Create Occasion</h3>
+          <p class="hint">Add the occasion details below.</p>
+          <label>
+            Title
+            <input id="occasion-title" type="text" placeholder="Birthday" />
+          </label>
+          <label>
+            Date
+            <input id="occasion-date" type="date" />
+          </label>
+          <label>
+            Image URL
+            <input id="occasion-image" type="url" placeholder="https://example.com/bday.jpg" />
+          </label>
+          <button class="primary" id="create-occasion" style="margin-top: 12px">Add Occasion</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

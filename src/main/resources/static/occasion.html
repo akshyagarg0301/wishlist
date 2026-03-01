@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Occasion</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <nav class="topbar">
+        <div class="brand">
+          <span class="brand-icon">🎁</span>
+          <span class="brand-name">Giftly</span>
+        </div>
+        <div class="nav-actions">
+          <a href="/index.html#my" class="ghost">← Back to My Wishlists</a>
+        </div>
+      </nav>
+
+      <section class="section detail">
+        <div class="banner">
+          <div>
+            <span class="pill">Occasion</span>
+            <h2 id="occasion-title">Occasion</h2>
+            <p id="occasion-date">No date</p>
+          </div>
+          <button class="primary hidden" id="new-gift-btn">+ New Gift</button>
+        </div>
+
+        <div id="share-section" class="hidden">
+          <div class="section-head row" style="margin-top: 12px">
+            <div>
+              <h3>Share this occasion</h3>
+              <p>Send this link to friends so they can reserve or purchase gifts.</p>
+            </div>
+          </div>
+          <div class="modal-grid" style="margin-top: 8px">
+            <div>
+              <label>
+                Share Link
+                <input id="occasion-share-link" type="url" readonly />
+              </label>
+              <div class="footer-actions">
+                <button class="ghost" id="copy-share-link">Copy Link</button>
+                <button class="primary" id="share-whatsapp">Share on WhatsApp</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="owner-controls" class="hidden" style="margin-top: 12px">
+          <button class="ghost" id="reveal-buyers">Reveal buyers</button>
+          <span class="hint" id="reveal-hint"></span>
+        </div>
+
+        <div id="guest-controls" class="hidden"></div>
+        <div id="guest-signed-in" class="hidden"></div>
+
+        <h3 class="subhead">Gift Items</h3>
+        <div id="owner-gift-list" class="gift-list hidden"></div>
+        <div id="owner-gift-empty" class="empty-state hidden">
+          No gifts added yet. Click “+ New Gift” to add your first item.
+        </div>
+        <div id="guest-gift-list" class="gift-list hidden"></div>
+        <div id="guest-gift-empty" class="empty-state hidden">
+          No gifts have been added yet.
+        </div>
+      </section>
+    </div>
+
+    <div class="modal" id="gift-modal" aria-hidden="true">
+      <div class="modal-card">
+        <button class="close" id="close-gift">×</button>
+        <h3>Add Gift Item</h3>
+        <label>
+          <span class="label-text">Name</span><span class="required">*</span>
+          <input id="gift-name" type="text" placeholder="Noise Cancelling Headphones" />
+        </label>
+        <label>
+          Description
+          <textarea id="gift-description" rows="3" placeholder="Over-ear, black."></textarea>
+        </label>
+        <label>
+          Image URL
+          <input id="gift-image" type="url" placeholder="https://example.com/hp.jpg" />
+        </label>
+        <label>
+          <span class="label-text">Purchase Link</span><span class="required">*</span>
+          <input id="gift-link" type="url" placeholder="https://store.example.com/item" />
+        </label>
+        <button class="primary" id="create-gift" style="margin-top: 12px">Add Gift</button>
+      </div>
+    </div>
+
+    <div class="modal" id="guest-auth-modal" aria-hidden="true">
+      <div class="modal-card">
+        <button class="close" id="close-guest-auth">×</button>
+        <h3>Sign in to continue</h3>
+        <p class="hint">Sign in with Google to reserve or mark gifts as purchased.</p>
+        <div id="google-signin"></div>
+      </div>
+    </div>
+
+    <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="/occasion.js"></script>
+  </body>
+</html>
