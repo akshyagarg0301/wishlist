@@ -41,7 +41,8 @@ public class AuthController {
                 .httpOnly(true)
                 .path("/")
                 .maxAge(7 * 24 * 60 * 60)
-                .sameSite("Lax")
+                .sameSite("None")
+                .secure(true)
                 .build();
         response.addHeader("Set-Cookie", cookie.toString());
         return new LoginResponse(user.getId(), user.getName(), user.getEmail(), token);
@@ -53,7 +54,8 @@ public class AuthController {
                 .httpOnly(true)
                 .path("/")
                 .maxAge(0)
-                .sameSite("Lax")
+                .sameSite("None")
+                .secure(true)
                 .build();
         response.addHeader("Set-Cookie", cookie.toString());
     }

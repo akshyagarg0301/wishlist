@@ -43,7 +43,8 @@ public class GuestAuthController {
                 .httpOnly(true)
                 .path("/")
                 .maxAge(7 * 24 * 60 * 60)
-                .sameSite("Lax")
+                .sameSite("None")
+                .secure(true)
                 .build();
         response.addHeader("Set-Cookie", cookie.toString());
         return new GuestInfo(name, email);
