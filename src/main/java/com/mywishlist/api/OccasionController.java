@@ -9,6 +9,7 @@ import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,6 +42,11 @@ public class OccasionController {
         return occasionService.listForRecipient(recipientId).stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    @DeleteMapping("/{occasionId}")
+    public void delete(@PathVariable String recipientId, @PathVariable String occasionId) {
+        occasionService.delete(occasionId, recipientId);
     }
 
     private OccasionResponse toResponse(Occasion occasion) {

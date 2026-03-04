@@ -120,6 +120,9 @@ function renderMyOccasions(items) {
             <span>${item.eventDate || "No date"}</span>
           </div>
           <div class="progress"><span style="width: 0%"></span></div>
+          <div class="actions">
+            <button class="ghost small" data-action="delete-occasion" data-occasion-id="${item.id}">Delete</button>
+          </div>
         </div>
       </article>`
     )
@@ -289,6 +292,17 @@ createOccasionBtn.addEventListener("click", async () => {
 });
 
 myOccasionCards?.addEventListener("click", (event) => {
+  const deleteBtn = event.target.closest("[data-action='delete-occasion']");
+  if (deleteBtn) {
+    event.stopPropagation();
+    const id = deleteBtn.dataset.occasionId;
+    if (!id) return;
+    if (!confirm("Delete this occasion?")) return;
+    request(`/api/recipients/${getActiveUserId()}/occasions/${id}`, { method: "DELETE" })
+      .then(() => refreshMyOccasions())
+      .catch((err) => showToast(err.message, "error"));
+    return;
+  }
   const card = event.target.closest("[data-occasion-id]");
   if (!card) return;
   const id = card.dataset.occasionId;

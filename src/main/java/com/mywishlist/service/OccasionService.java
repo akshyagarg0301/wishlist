@@ -32,6 +32,14 @@ public class OccasionService {
                 .orElseThrow(() -> new NotFoundException("Occasion not found"));
     }
 
+    public void delete(String id, String recipientId) {
+        Occasion occasion = get(id);
+        if (!occasion.getRecipientId().equals(recipientId)) {
+            throw new NotFoundException("Occasion not found");
+        }
+        occasionRepository.delete(occasion);
+    }
+
     public Occasion reveal(String id) {
         Occasion occasion = get(id);
         occasion.setRevealUnlocked(true);

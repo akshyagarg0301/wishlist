@@ -36,6 +36,15 @@ public class GiftService {
         return giftItemRepository.findByRecipientId(recipientId);
     }
 
+    public void delete(String giftId, String recipientId) {
+        GiftItem gift = giftItemRepository.findById(giftId)
+                .orElseThrow(() -> new NotFoundException("Gift item not found"));
+        if (!gift.getRecipientId().equals(recipientId)) {
+            throw new NotFoundException("Gift item not found");
+        }
+        giftItemRepository.delete(gift);
+    }
+
     public GiftItem purchase(String giftId, String purchaserId) {
         GiftItem gift = giftItemRepository.findById(giftId)
                 .orElseThrow(() -> new NotFoundException("Gift item not found"));

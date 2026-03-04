@@ -91,7 +91,7 @@ function renderOwnerGifts(items) {
     return;
   }
   ownerGiftEmpty.classList.add("hidden");
-  ownerGiftList.innerHTML = items
+ownerGiftList.innerHTML = items
     .map((item) => {
       const buyerLabel =
         item.status === "AVAILABLE"
@@ -107,6 +107,9 @@ function renderOwnerGifts(items) {
             <h4>${item.name}</h4>
             <p>${item.description || "No description"}</p>
             <div class="hint">${buyerLabel}</div>
+            <div class="actions">
+              <button class="ghost small" data-action="delete-gift" data-gift-id="${item.id}">Delete</button>
+            </div>
           </div>
           <div class="price">${item.status}</div>
         </div>
@@ -131,16 +134,32 @@ function renderGuestGifts(items) {
         <div class="gift-info">
           <h4>${item.name}</h4>
           <p>${item.description || "No description"}</p>
-          <div class="actions">
-            <button class="ghost small" data-action="reserve" data-gift-id="${item.id}" ${item.status !== "AVAILABLE" || !guestVerified ? "disabled" : ""}>Reserve</button>
-            <button class="primary small" data-action="purchase" data-gift-id="${item.id}" ${item.status !== "AVAILABLE" || !guestVerified ? "disabled" : ""}>Mark Purchased</button>
-          </div>
+          ${
+            item.status === "AVAILABLE"
+              ? `<div class="actions">
+                  <button class="ghost small" data-action="reserve" data-gift-id="${item.id}" ${!guestVerified ? "disabled" : ""}>Reserve</button>
+                  <button class="primary small" data-action="purchase" data-gift-id="${item.id}" ${!guestVerified ? "disabled" : ""}>Mark Purchased</button>
+                </div>`
+              : `<div class="hint">This item is ${item.status.toLowerCase()}.</div>`
+          }
         </div>
         <div class="price">${item.status}</div>
       </div>`
     )
     .join("");
 }
+
+ownerGiftList?.addEventListener("click", (event) => {
+  const deleteBtn = event.target.closest("[data-action='delete-gift']");
+  if (!deleteBtn) return;
+  event.preventDefault();
+  const giftId = deleteBtn.dataset.giftId;
+  if (!giftId) return;
+  if (!confirm("Delete this gift item?")) return;
+  request(`/api/recipients/${recipientId}/gifts/${giftId}`, { method: "DELETE" })
+    .then(() => loadGifts())
+    .catch((err) => showToast(err.message, "error"));
+});
 
 function showGuestAuth() {
   if (!guestAuthModal) return;
