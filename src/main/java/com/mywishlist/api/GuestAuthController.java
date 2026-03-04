@@ -6,7 +6,9 @@ import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.mywishlist.api.dto.GuestDtos.GuestInfo;
 import com.mywishlist.api.dto.GuestDtos.GoogleVerifyRequest;
+import com.mywishlist.domain.User;
 import com.mywishlist.security.JwtService;
+import com.mywishlist.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.Cookie;
@@ -16,6 +18,8 @@ import jakarta.validation.Valid;
 import java.util.Collections;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,9 +32,11 @@ import org.springframework.web.server.ResponseStatusException;
 public class GuestAuthController {
     private final JwtService jwtService;
     private final String googleClientId = "1056769002846-h3rquevl5imgn20srtmp1thebmibdj3p.apps.googleusercontent.com";
+    private final UserService userService;
 
-    public GuestAuthController(JwtService jwtService) {
+    public GuestAuthController(JwtService jwtService, UserService userService) {
         this.jwtService = jwtService;
+        this.userService = userService;
     }
 
     @PostMapping("/google/verify")
@@ -67,6 +73,26 @@ public class GuestAuthController {
         } catch (JwtException ex) {
             return null;
         }
+    }
+
+    @PostMapping("/from-auth")
+    public GuestInfo fromAuth(HttpServletResponse response) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        String userId = authentication.getPrincipal().toString();
+        User user = userService.get(userId);
+        String token = jwtService.generateGuestToken(user.getName(), user.getEmail());
+        ResponseCookie cookie = ResponseCookie.from("guest_token", token)
+                .httpOnly(true)
+                .path("/")
+                .maxAge(7 * 24 * 60 * 60)
+                .sameSite("None")
+                .secure(true)
+                .build();
+        response.addHeader("Set-Cookie", cookie.toString());
+        return new GuestInfo(user.getName(), user.getEmail());
     }
 
     private GoogleIdToken.Payload verifyToken(String credential) {
