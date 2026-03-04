@@ -108,7 +108,7 @@ ownerGiftList.innerHTML = items
             <p>${item.description || "No description"}</p>
             <div class="hint">${buyerLabel}</div>
             <div class="actions">
-              <button class="ghost small" data-action="delete-gift" data-gift-id="${item.id}">Delete</button>
+              <button class="ghost small danger" data-action="delete-gift" data-gift-id="${item.id}">Delete</button>
             </div>
           </div>
           <div class="price">${item.status}</div>
@@ -129,7 +129,7 @@ function renderGuestGifts(items) {
   guestGiftList.innerHTML = items
     .map(
       (item) => `
-      <div class="gift-card ${item.status === "PURCHASED" ? "purchased" : ""}" data-link="${item.purchaseLink || ""}">
+      <div class="gift-card ${item.status === "PURCHASED" ? "purchased" : ""}" data-link="${item.purchaseLink || ""}" data-status="${item.status}">
         <div class="gift-thumb gold"></div>
         <div class="gift-info">
           <h4>${item.name}</h4>

@@ -121,7 +121,7 @@ function renderMyOccasions(items) {
           </div>
           <div class="progress"><span style="width: 0%"></span></div>
           <div class="actions">
-            <button class="ghost small" data-action="delete-occasion" data-occasion-id="${item.id}">Delete</button>
+            <button class="ghost small danger" data-action="delete-occasion" data-occasion-id="${item.id}">Delete</button>
           </div>
         </div>
       </article>`

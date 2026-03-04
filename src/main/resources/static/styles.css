@@ -127,6 +127,15 @@ button:hover {
   background: #eadcd0;
 }
 
+.ghost.danger {
+  background: #ffe9e6;
+  color: #b23a2b;
+}
+
+.ghost.danger:hover {
+  background: #ffd8d1;
+}
+
 .small {
   padding: 6px 12px;
   font-size: 0.85rem;
@@ -364,6 +373,10 @@ h1 {
   gap: 16px;
   align-items: center;
   box-shadow: var(--shadow);
+}
+
+.gift-card[data-status]:not([data-status="AVAILABLE"]) .actions {
+  display: none;
 }
 
 .gift-card-link {
