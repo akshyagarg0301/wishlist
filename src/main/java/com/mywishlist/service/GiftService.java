@@ -15,9 +15,12 @@ import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class GiftService {
+    private static final Logger log = LoggerFactory.getLogger(GiftService.class);
     private final GiftItemRepository giftItemRepository;
     private final UserService userService;
     private final OccasionService occasionService;
@@ -106,16 +109,21 @@ public class GiftService {
 
     private String appendVendorTag(String purchaseLink) {
         if (purchaseLink == null || purchaseLink.isBlank()) {
+            log.warn("Purchase link is null/blank; skipping tag append.");
             return purchaseLink;
         }
         String domain = extractDomain(purchaseLink);
         if (domain == null) {
+            log.warn("Could not parse domain from purchase link: {}", purchaseLink);
             return purchaseLink;
         }
         return vendorRepository.findByDomain(domain)
                 .filter(vendor -> vendor.getTagId() != null && !vendor.getTagId().isBlank())
                 .map(vendor -> appendQueryParam(purchaseLink, "tag", vendor.getTagId()))
-                .orElse(purchaseLink);
+                .orElseGet(() -> {
+                    log.warn("No tagId configured for vendor domain: {}", domain);
+                    return purchaseLink;
+                });
     }
 
     private String extractDomain(String url) {
