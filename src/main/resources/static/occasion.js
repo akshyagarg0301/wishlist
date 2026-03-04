@@ -235,11 +235,6 @@ createGiftBtn?.addEventListener("click", async () => {
 guestGiftList?.addEventListener("click", async (event) => {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
-  if (!guestVerified) {
-    showGuestAuth();
-    showToast("Please sign in with Google first.", "error");
-    return;
-  }
   const action = button.dataset.action;
   const giftId = button.dataset.giftId;
   const guestNameValue = guestName;
@@ -270,6 +265,10 @@ closeGuestAuth?.addEventListener("click", () => hideGuestAuth());
 
 guestAuthModal?.addEventListener("click", (event) => {
   if (event.target === guestAuthModal) {
+    if (!guestVerified) {
+      showToast("Google sign-in is required to continue.", "error");
+      return;
+    }
     hideGuestAuth();
   }
 });
@@ -334,6 +333,7 @@ async function init() {
     guestGiftList.classList.toggle("hidden", isOwner);
     guestGiftEmpty.classList.toggle("hidden", isOwner);
     await loadGifts();
+    initGoogleSignIn();
   } catch (err) {
     showToast(err.message, "error");
   }
@@ -393,4 +393,3 @@ shareWhatsappBtn?.addEventListener("click", () => {
 });
 
 init();
-window.addEventListener("load", initGoogleSignIn);
