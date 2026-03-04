@@ -284,6 +284,12 @@ h1 {
   padding: 16px;
 }
 
+.wishlist-body .actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
 .pill {
   display: inline-block;
   background: #f0c27b;
