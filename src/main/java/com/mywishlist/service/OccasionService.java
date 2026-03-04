@@ -1,6 +1,7 @@
 package com.mywishlist.service;
 
 import com.mywishlist.domain.Occasion;
+import com.mywishlist.repository.GiftItemRepository;
 import com.mywishlist.repository.OccasionRepository;
 import java.time.LocalDate;
 import java.util.List;
@@ -10,10 +11,12 @@ import org.springframework.stereotype.Service;
 public class OccasionService {
     private final OccasionRepository occasionRepository;
     private final UserService userService;
+    private final GiftItemRepository giftItemRepository;
 
-    public OccasionService(OccasionRepository occasionRepository, UserService userService) {
+    public OccasionService(OccasionRepository occasionRepository, UserService userService, GiftItemRepository giftItemRepository) {
         this.occasionRepository = occasionRepository;
         this.userService = userService;
+        this.giftItemRepository = giftItemRepository;
     }
 
     public Occasion create(String recipientId, String title, LocalDate eventDate, String imageUrl, boolean surpriseMode) {
@@ -36,6 +39,11 @@ public class OccasionService {
         Occasion occasion = get(id);
         if (!occasion.getRecipientId().equals(recipientId)) {
             throw new NotFoundException("Occasion not found");
+        }
+        boolean hasPurchased = giftItemRepository.findByOccasionId(id).stream()
+                .anyMatch(item -> item.getStatus() == com.mywishlist.domain.GiftStatus.PURCHASED);
+        if (hasPurchased) {
+            throw new IllegalStateException("Occasion has purchased gifts and cannot be deleted");
         }
         occasionRepository.delete(occasion);
     }

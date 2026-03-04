@@ -59,6 +59,9 @@ public class GiftService {
         if (!gift.getRecipientId().equals(recipientId)) {
             throw new NotFoundException("Gift item not found");
         }
+        if (gift.getStatus() == GiftStatus.PURCHASED) {
+            throw new IllegalStateException("Purchased gifts cannot be deleted");
+        }
         giftItemRepository.delete(gift);
     }
 
@@ -112,11 +115,13 @@ public class GiftService {
             log.warn("Purchase link is null/blank; skipping tag append.");
             return purchaseLink;
         }
+        log.info("purchase link:{}" , purchaseLink);
         String domain = extractDomain(purchaseLink);
         if (domain == null) {
             log.warn("Could not parse domain from purchase link: {}", purchaseLink);
             return purchaseLink;
         }
+        log.info("domain link:{}" , domain);
         return vendorRepository.findByDomain(domain)
                 .filter(vendor -> vendor.getTagId() != null && !vendor.getTagId().isBlank())
                 .map(vendor -> appendQueryParam(purchaseLink, "tag", vendor.getTagId()))
