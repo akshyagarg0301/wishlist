@@ -4,8 +4,16 @@ import com.mywishlist.domain.GiftItem;
 import com.mywishlist.domain.GiftStatus;
 import com.mywishlist.domain.Occasion;
 import com.mywishlist.repository.GiftItemRepository;
+import com.mywishlist.repository.VendorRepository;
 import java.time.Instant;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -13,11 +21,16 @@ public class GiftService {
     private final GiftItemRepository giftItemRepository;
     private final UserService userService;
     private final OccasionService occasionService;
+    private final VendorRepository vendorRepository;
 
-    public GiftService(GiftItemRepository giftItemRepository, UserService userService, OccasionService occasionService) {
+    public GiftService(GiftItemRepository giftItemRepository,
+                       UserService userService,
+                       OccasionService occasionService,
+                       VendorRepository vendorRepository) {
         this.giftItemRepository = giftItemRepository;
         this.userService = userService;
         this.occasionService = occasionService;
+        this.vendorRepository = vendorRepository;
     }
 
     public GiftItem create(String recipientId, String name, String description, String imageUrl, String purchaseLink, String occasionId) {
@@ -28,7 +41,8 @@ public class GiftService {
                 throw new NotFoundException("Occasion does not belong to recipient");
             }
         }
-        GiftItem item = new GiftItem(name, description, imageUrl, purchaseLink, recipientId, occasionId);
+        String normalizedLink = appendVendorTag(purchaseLink);
+        GiftItem item = new GiftItem(name, description, imageUrl, normalizedLink, recipientId, occasionId);
         return giftItemRepository.save(item);
     }
 
@@ -88,5 +102,85 @@ public class GiftService {
 
     public List<GiftItem> listForOccasion(String occasionId) {
         return giftItemRepository.findByOccasionId(occasionId);
+    }
+
+    private String appendVendorTag(String purchaseLink) {
+        if (purchaseLink == null || purchaseLink.isBlank()) {
+            return purchaseLink;
+        }
+        String domain = extractDomain(purchaseLink);
+        if (domain == null) {
+            return purchaseLink;
+        }
+        return vendorRepository.findByDomain(domain)
+                .filter(vendor -> vendor.getTagId() != null && !vendor.getTagId().isBlank())
+                .map(vendor -> appendQueryParam(purchaseLink, "tag", vendor.getTagId()))
+                .orElse(purchaseLink);
+    }
+
+    private String extractDomain(String url) {
+        try {
+            URI uri = new URI(url);
+            String host = uri.getHost();
+            if (host == null) {
+                return null;
+            }
+            return host.startsWith("www.") ? host.substring(4) : host;
+        } catch (URISyntaxException ex) {
+            return null;
+        }
+    }
+
+    private String appendQueryParam(String url, String key, String value) {
+        try {
+            URI uri = new URI(url);
+            Map<String, String> params = parseQuery(uri.getRawQuery());
+            if (params.containsKey(key)) {
+                return url;
+            }
+            params.put(key, value);
+            String newQuery = buildQuery(params);
+            URI updated = new URI(
+                    uri.getScheme(),
+                    uri.getAuthority(),
+                    uri.getPath(),
+                    newQuery,
+                    uri.getFragment()
+            );
+            return updated.toString();
+        } catch (URISyntaxException ex) {
+            return url;
+        }
+    }
+
+    private Map<String, String> parseQuery(String query) {
+        Map<String, String> params = new LinkedHashMap<>();
+        if (query == null || query.isBlank()) {
+            return params;
+        }
+        for (String pair : query.split("&")) {
+            int idx = pair.indexOf('=');
+            if (idx > -1) {
+                String k = URLDecoder.decode(pair.substring(0, idx), StandardCharsets.UTF_8);
+                String v = URLDecoder.decode(pair.substring(idx + 1), StandardCharsets.UTF_8);
+                params.put(k, v);
+            } else {
+                params.put(URLDecoder.decode(pair, StandardCharsets.UTF_8), "");
+            }
+        }
+        return params;
+    }
+
+    private String buildQuery(Map<String, String> params) {
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : params.entrySet()) {
+            if (sb.length() > 0) {
+                sb.append("&");
+            }
+            sb.append(URLEncoder.encode(entry.getKey(), StandardCharsets.UTF_8));
+            sb.append("=");
+            sb.append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8));
+        }
+        return sb.toString();
     }
 }
