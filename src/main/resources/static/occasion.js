@@ -133,7 +133,7 @@ function renderGuestGifts(items) {
           <p>${item.description || "No description"}</p>
           <div class="actions">
             <button class="ghost small" data-action="reserve" data-gift-id="${item.id}" ${item.status !== "AVAILABLE" || !guestVerified ? "disabled" : ""}>Reserve</button>
-            <button class="primary small" data-action="purchase" data-gift-id="${item.id}" ${item.status === "PURCHASED" || !guestVerified ? "disabled" : ""}>Mark Purchased</button>
+            <button class="primary small" data-action="purchase" data-gift-id="${item.id}" ${item.status !== "AVAILABLE" || !guestVerified ? "disabled" : ""}>Mark Purchased</button>
           </div>
         </div>
         <div class="price">${item.status}</div>
@@ -154,6 +154,18 @@ function hideGuestAuth() {
   guestAuthModal.setAttribute("aria-hidden", "true");
 }
 
+function isRevealActive() {
+  if (!occasionData) return false;
+  if (!occasionData.surpriseMode) return true;
+  if (occasionData.revealUnlocked) return true;
+  if (occasionData.revealAt) {
+    const revealDate = new Date(occasionData.revealAt);
+    const today = new Date();
+    return revealDate <= today;
+  }
+  return false;
+}
+
 async function loadOccasion() {
   occasionData = await request(`/api/occasions/${occasionId}`);
   titleEl.textContent = occasionData.title;
@@ -164,6 +176,12 @@ async function loadOccasion() {
   } else {
     revealHint.textContent = "Surprise mode is OFF. Buyers show immediately.";
     revealBuyersBtn.classList.add("hidden");
+  }
+  if (occasionData.surpriseMode) {
+    const icon = "<span class=\"icon-eye\" aria-hidden=\"true\"></span>";
+    revealBuyersBtn.innerHTML = isRevealActive()
+      ? `Hide buyers ${icon}`
+      : `Reveal buyers ${icon}`;
   }
 }
 
@@ -284,10 +302,19 @@ guestGiftList?.addEventListener("click", (event) => {
 
 revealBuyersBtn?.addEventListener("click", async () => {
   try {
-    const data = await request(`/api/occasions/${occasionId}/reveal`, { method: "POST" });
+    if (!occasionData?.surpriseMode) {
+      return;
+    }
+    if (isRevealActive() && !occasionData.revealUnlocked) {
+      showToast("Auto reveal is active. Buyers cannot be hidden now.", "error");
+      return;
+    }
+    const endpoint = isRevealActive() ? "hide" : "reveal";
+    const data = await request(`/api/occasions/${occasionId}/${endpoint}`, { method: "POST" });
     occasionData = data;
-    showToast("Buyers revealed.");
+    showToast(endpoint === "reveal" ? "Buyers revealed." : "Buyers hidden.");
     await loadGifts();
+    await loadOccasion();
   } catch (err) {
     showToast(err.message, "error");
   }

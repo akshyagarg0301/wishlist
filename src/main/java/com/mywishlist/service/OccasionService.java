@@ -38,6 +38,12 @@ public class OccasionService {
         return occasionRepository.save(occasion);
     }
 
+    public Occasion hide(String id) {
+        Occasion occasion = get(id);
+        occasion.setRevealUnlocked(false);
+        return occasionRepository.save(occasion);
+    }
+
     public boolean isRevealActive(Occasion occasion) {
         if (!occasion.isSurpriseMode()) {
             return true;

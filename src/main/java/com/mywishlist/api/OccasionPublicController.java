@@ -30,6 +30,12 @@ public class OccasionPublicController {
         return toResponse(occasion);
     }
 
+    @PostMapping("/{occasionId}/hide")
+    public OccasionResponse hide(@PathVariable String occasionId) {
+        Occasion occasion = occasionService.hide(occasionId);
+        return toResponse(occasion);
+    }
+
     private OccasionResponse toResponse(Occasion occasion) {
         return new OccasionResponse(
                 occasion.getId(),
