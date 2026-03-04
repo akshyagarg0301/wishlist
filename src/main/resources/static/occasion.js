@@ -309,6 +309,16 @@ async function init() {
       const me = await request("/api/auth/me");
       recipientId = me.userId;
       isOwner = true;
+      try {
+        const guest = await request("/api/guests/from-auth", { method: "POST" });
+        if (guest && guest.name) {
+          guestName = guest.name;
+          guestEmail = guest.email;
+          guestVerified = true;
+        }
+      } catch (err) {
+        // ignore
+      }
     } catch (err) {
       isOwner = false;
     }
@@ -341,6 +351,7 @@ async function init() {
 
 function initGoogleSignIn() {
   if (!googleSignInEl || !window.google) return;
+  if (isOwner) return;
   window.google.accounts.id.initialize({
     client_id: "1056769002846-h3rquevl5imgn20srtmp1thebmibdj3p.apps.googleusercontent.com",
     callback: async (response) => {
