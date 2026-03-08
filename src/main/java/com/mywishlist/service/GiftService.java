@@ -148,9 +148,6 @@ public class GiftService {
         try {
             URI uri = new URI(url);
             Map<String, String> params = parseQuery(uri.getRawQuery());
-            if (params.containsKey(key)) {
-                return url;
-            }
             params.put(key, value);
             String newQuery = buildQuery(params);
             URI updated = new URI(

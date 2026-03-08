@@ -34,7 +34,7 @@ public class AuthController {
     public LoginResponse login(@Valid @RequestBody LoginRequest request, HttpServletResponse response) {
         User user = userService.getByEmail(request.email());
         if (!userService.matchesPassword(user, request.password())) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Incorrect password");
         }
         String token = jwtService.generateToken(user.getId(), user.getEmail());
         ResponseCookie cookie = ResponseCookie.from("auth_token", token)
