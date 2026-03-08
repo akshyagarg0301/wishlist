@@ -115,19 +115,20 @@ public class GiftService {
             log.warn("Purchase link is null/blank; skipping tag append.");
             return purchaseLink;
         }
-        log.info("purchase link:{}" , purchaseLink);
-        String domain = extractDomain(purchaseLink);
+        String normalized = normalizeUrl(purchaseLink);
+        log.info("purchase link:{}" , normalized);
+        String domain = extractDomain(normalized);
         if (domain == null) {
-            log.warn("Could not parse domain from purchase link: {}", purchaseLink);
+            log.warn("Could not parse domain from purchase link: {}", normalized);
             return purchaseLink;
         }
         log.info("domain link:{}" , domain);
         return vendorRepository.findByDomain(domain)
                 .filter(vendor -> vendor.getTagId() != null && !vendor.getTagId().isBlank())
-                .map(vendor -> appendQueryParam(purchaseLink, "tag", vendor.getTagId()))
+                .map(vendor -> appendQueryParam(normalized, "tag", vendor.getTagId()))
                 .orElseGet(() -> {
                     log.warn("No tagId configured for vendor domain: {}", domain);
-                    return purchaseLink;
+                    return normalized;
                 });
     }
 
@@ -142,6 +143,14 @@ public class GiftService {
         } catch (URISyntaxException ex) {
             return null;
         }
+    }
+
+    private String normalizeUrl(String url) {
+        String trimmed = url.trim();
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+            return trimmed;
+        }
+        return "https://" + trimmed;
     }
 
     private String appendQueryParam(String url, String key, String value) {
