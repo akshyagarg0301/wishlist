@@ -99,8 +99,9 @@ ownerGiftList.innerHTML = items
           : item.buyerName
             ? `Buyer: ${item.buyerName}`
             : "Buyer hidden";
+      const link = ensureAbsoluteUrl(item.purchaseLink);
       return `
-      <a class="gift-card-link" href="${item.purchaseLink || "#"}" target="_blank" rel="noopener noreferrer" ${item.purchaseLink ? "" : "aria-disabled=\"true\""}>
+      <a class="gift-card-link" href="${link || "#"}" target="_blank" rel="noopener noreferrer" ${link ? "" : "aria-disabled=\"true\""}>
         <div class="gift-card ${item.status === "PURCHASED" ? "purchased" : ""}">
           <div class="gift-thumb gold"></div>
           <div class="gift-info">
@@ -129,7 +130,7 @@ function renderGuestGifts(items) {
   guestGiftList.innerHTML = items
     .map(
       (item) => `
-      <div class="gift-card ${item.status === "PURCHASED" ? "purchased" : ""}" data-link="${item.purchaseLink || ""}" data-status="${item.status}">
+      <div class="gift-card ${item.status === "PURCHASED" ? "purchased" : ""}" data-link="${ensureAbsoluteUrl(item.purchaseLink) || ""}" data-status="${item.status}">
         <div class="gift-thumb gold"></div>
         <div class="gift-info">
           <h4>${item.name}</h4>
@@ -147,6 +148,15 @@ function renderGuestGifts(items) {
       </div>`
     )
     .join("");
+}
+
+function ensureAbsoluteUrl(url) {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  return `https://${trimmed}`;
 }
 
 ownerGiftList?.addEventListener("click", (event) => {
