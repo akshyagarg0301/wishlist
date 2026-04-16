@@ -5,7 +5,7 @@ import { api } from '../services/api';
 
 
 export default function Home() {
-  const { user, login, logout, signup } = useAuth();
+  const { user, loading: authLoading, login, logout, signup } = useAuth();
   const navigate = useNavigate();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authTab, setAuthTab] = useState('login');
@@ -171,11 +171,11 @@ export default function Home() {
             <h2>My Wishlists</h2>
             <p>Create and manage your gift wishlists.</p>
           </div>
-          {user && (
+          {user && !authLoading ? (
             <button className="primary" onClick={() => setShowCreateModal(true)}>
               + New Wishlist
             </button>
-          )}
+          ) : null}
         </div>
         <div className="wishlist-grid">
           {!user && (
