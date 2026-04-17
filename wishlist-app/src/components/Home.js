@@ -362,6 +362,7 @@ export default function Home() {
                   type="date"
                   value={formData.eventDate}
                   onChange={handleInputChange}
+                  min={new Date().toISOString().split('T')[0]}
                 />
               </label>
               <label>
