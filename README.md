@@ -20,7 +20,29 @@ Flow:
 3. It opens `import.html` on your Giftly backend with the product prefilled.
 4. Pick an occasion and save the gift.
 
-For local development, set the extension's Giftly base URL to `http://localhost:8080` in the extension options page.
+The extension now defaults to `https://wishlist-1-6omc.onrender.com`.
+
+### Install For Testing
+1. Open `chrome://extensions`
+2. Turn on `Developer mode`
+3. Click `Load unpacked`
+4. Select the `browser-extension/` folder
+5. Pin the extension in Chrome
+6. Open an Amazon product page and click the extension icon
+
+### Local Development
+If you want the extension to target a local backend instead, open the extension settings and change the Giftly base URL to `http://localhost:8080`.
+
+### Share With Other Users
+For normal users, `Load unpacked` is not the right distribution model. Publish the extension to the Chrome Web Store.
+
+High-level release flow:
+1. Keep the files in `browser-extension/` as the extension package
+2. Zip the contents of that folder
+3. Create a Chrome Web Store developer account
+4. Upload the zip as a new extension item
+5. Add store screenshots, description, privacy details, and permissions explanation
+6. Publish it so users can install it directly from the store
 
 ## Core Endpoints
 All requests except `POST /api/users` and `POST /api/auth/login` require an `Authorization: Bearer <token>` header.

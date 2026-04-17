@@ -22,6 +22,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.jsoup:jsoup:1.18.3")
     implementation(platform("software.amazon.awssdk:bom:2.41.29"))
     implementation("software.amazon.awssdk:sns")
     implementation("software.amazon.awssdk:url-connection-client")

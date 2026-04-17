@@ -1,4 +1,5 @@
-const DEFAULT_APP_BASE_URL = "http://localhost:8080";
+const DEFAULT_APP_BASE_URL = "https://wishlist-1-6omc.onrender.com";
+const LEGACY_LOCAL_APP_BASE_URL = "http://localhost:8080";
 
 const stateMessage = document.getElementById("state-message");
 const productCard = document.getElementById("product-card");
@@ -34,7 +35,11 @@ function renderProduct(data) {
 
 async function getAppBaseUrl() {
   const result = await chrome.storage.sync.get({ appBaseUrl: DEFAULT_APP_BASE_URL });
-  return result.appBaseUrl || DEFAULT_APP_BASE_URL;
+  const appBaseUrl = normalizeAppBaseUrl(result.appBaseUrl);
+  if (appBaseUrl !== result.appBaseUrl) {
+    await chrome.storage.sync.set({ appBaseUrl });
+  }
+  return appBaseUrl;
 }
 
 function buildImportUrl(appBaseUrl, data) {
@@ -84,3 +89,10 @@ openOptionsButton.addEventListener("click", () => {
 loadProduct().catch(() => {
   setMessage("Could not inspect this page.");
 });
+function normalizeAppBaseUrl(value) {
+  const normalized = (value || "").trim().replace(/\/$/, "");
+  if (!normalized || normalized === LEGACY_LOCAL_APP_BASE_URL) {
+    return DEFAULT_APP_BASE_URL;
+  }
+  return normalized;
+}

@@ -1,4 +1,6 @@
 const occasionSelect = document.getElementById("import-occasion-select");
+const sourceUrlInput = document.getElementById("import-source-url");
+const loadLinkButton = document.getElementById("import-load-link");
 const nameInput = document.getElementById("import-name");
 const descriptionInput = document.getElementById("import-description");
 const imageUrlInput = document.getElementById("import-image-url");
@@ -55,6 +57,7 @@ function renderProductPreview(product) {
   sourcePill.textContent = product.source;
   titlePreview.textContent = product.name || "Imported product";
   linkPreview.textContent = product.purchaseLink || "";
+  sourceUrlInput.value = product.purchaseLink || "";
   nameInput.value = product.name;
   descriptionInput.value = product.description;
   imageUrlInput.value = product.imageUrl;
@@ -69,6 +72,14 @@ function renderProductPreview(product) {
     imagePreview.classList.add("hidden");
     imageFallback.classList.remove("hidden");
   }
+}
+
+async function previewProductFromLink(url) {
+  return request("/api/imports/preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url })
+  });
 }
 
 function renderOccasions() {
@@ -97,6 +108,25 @@ async function loadOccasions() {
     authMessage.classList.remove("hidden");
     occasionSelect.disabled = true;
     saveButton.disabled = true;
+  }
+}
+
+async function loadProductFromLink() {
+  const url = sourceUrlInput.value.trim();
+  if (!url) {
+    setResult("Amazon product link is required.", true);
+    return;
+  }
+
+  loadLinkButton.disabled = true;
+  try {
+    const product = await previewProductFromLink(url);
+    renderProductPreview(product);
+    setResult("Product details loaded.");
+  } catch (err) {
+    setResult(err.message, true);
+  } finally {
+    loadLinkButton.disabled = false;
   }
 }
 
@@ -132,6 +162,10 @@ saveButton.addEventListener("click", async () => {
   }
 });
 
+loadLinkButton.addEventListener("click", () => {
+  loadProductFromLink();
+});
+
 openOccasionButton.addEventListener("click", () => {
   if (!createdOccasionId) {
     return;
@@ -139,5 +173,9 @@ openOccasionButton.addEventListener("click", () => {
   window.location.href = `/occasion.html?occasionId=${encodeURIComponent(createdOccasionId)}`;
 });
 
-renderProductPreview(readProductFromUrl());
+const initialProduct = readProductFromUrl();
+renderProductPreview(initialProduct);
+if (initialProduct.purchaseLink && !initialProduct.name && !initialProduct.imageUrl && !initialProduct.description) {
+  loadProductFromLink();
+}
 loadOccasions();
