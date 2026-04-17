@@ -23,6 +23,7 @@ export default function Home() {
     eventDate: '',
     imageUrl: '',
   });
+  const today = getTodayDateValue();
 
   useEffect(() => {
     if (user) {
@@ -34,7 +35,7 @@ export default function Home() {
     if (!user) return;
     setLoading(true);
     try {
-      const data = await api.getOccasions(user);
+      const data = await api.getOccasions();
       setOccasions(data);
     } catch (err) {
       setError(err.message);
@@ -76,8 +77,12 @@ export default function Home() {
       setError('Title required');
       return;
     }
+    if (formData.eventDate && formData.eventDate < today) {
+      setError('Event date must be today or in the future');
+      return;
+    }
     try {
-      const newOccasion = await api.createOccasion(user, {
+      const newOccasion = await api.createOccasion({
         title: formData.title,
         eventDate: formData.eventDate || null,
         imageUrl: formData.imageUrl,
@@ -93,7 +98,7 @@ export default function Home() {
   async function handleDeleteOccasion(id) {
     if (!confirm('Delete this occasion?')) return;
     try {
-      await api.deleteOccasion(user, id);
+      await api.deleteOccasion(id);
       loadOccasions();
     } catch (err) {
       setError(err.message);
@@ -231,10 +236,13 @@ export default function Home() {
                     }`}
                   ></div>
                   <div className="wishlist-body">
-                    <span className="pill">Occasion</span>
+                    <span className="pill">{item.expired ? 'Expired' : 'Occasion'}</span>
                     <h3>{item.title}</h3>
                     <div className="meta">
-                      <span>{item.eventDate || 'No date'}</span>
+                      <span>
+                        {item.eventDate || 'No date'}
+                        {item.expired ? ' · Expired' : ''}
+                      </span>
                     </div>
                     <div className="actions">
                       <button
@@ -362,7 +370,7 @@ export default function Home() {
                   type="date"
                   value={formData.eventDate}
                   onChange={handleInputChange}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={today}
                 />
               </label>
               <label>
@@ -385,4 +393,12 @@ export default function Home() {
       )}
     </div>
   );
+}
+
+function getTodayDateValue() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }

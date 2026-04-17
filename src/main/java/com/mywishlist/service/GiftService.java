@@ -43,6 +43,7 @@ public class GiftService {
             if (!occasion.getRecipientId().equals(recipientId)) {
                 throw new NotFoundException("Occasion does not belong to recipient");
             }
+            occasionService.assertNotExpired(occasion);
         }
         String normalizedLink = appendVendorTag(purchaseLink);
         GiftItem item = new GiftItem(name, description, imageUrl, normalizedLink, recipientId, occasionId);
@@ -58,6 +59,10 @@ public class GiftService {
                 .orElseThrow(() -> new NotFoundException("Gift item not found"));
         if (!gift.getRecipientId().equals(recipientId)) {
             throw new NotFoundException("Gift item not found");
+        }
+        if (gift.getOccasionId() != null) {
+            Occasion occasion = occasionService.get(gift.getOccasionId());
+            occasionService.assertNotExpired(occasion);
         }
         if (gift.getStatus() == GiftStatus.PURCHASED) {
             throw new IllegalStateException("Purchased gifts cannot be deleted");

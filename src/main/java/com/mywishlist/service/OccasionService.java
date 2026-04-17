@@ -19,6 +19,7 @@ public class OccasionService {
     }
 
     public Occasion create(String recipientId, String title, LocalDate eventDate, String imageUrl, boolean surpriseMode) {
+        validateEventDate(eventDate);
         LocalDate revealAt = eventDate != null ? eventDate.plusDays(1) : null;
         Occasion occasion = new Occasion(title, eventDate, imageUrl, recipientId, surpriseMode, revealAt);
         return occasionRepository.save(occasion);
@@ -54,14 +55,27 @@ public class OccasionService {
 
     public Occasion reveal(String id) {
         Occasion occasion = get(id);
+        assertNotExpired(occasion);
         occasion.setRevealUnlocked(true);
         return occasionRepository.save(occasion);
     }
 
     public Occasion hide(String id) {
         Occasion occasion = get(id);
+        assertNotExpired(occasion);
         occasion.setRevealUnlocked(false);
         return occasionRepository.save(occasion);
+    }
+
+    public boolean isExpired(Occasion occasion) {
+        LocalDate eventDate = occasion.getEventDate();
+        return eventDate != null && eventDate.isBefore(LocalDate.now());
+    }
+
+    public void assertNotExpired(Occasion occasion) {
+        if (isExpired(occasion)) {
+            throw new IllegalStateException("Expired occasions can only be deleted");
+        }
     }
 
     public boolean isRevealActive(Occasion occasion) {
@@ -73,5 +87,11 @@ public class OccasionService {
         }
         LocalDate revealAt = occasion.getRevealAt();
         return revealAt != null && !revealAt.isAfter(LocalDate.now());
+    }
+
+    private void validateEventDate(LocalDate eventDate) {
+        if (eventDate != null && eventDate.isBefore(LocalDate.now())) {
+            throw new IllegalStateException("Event date must be today or in the future");
+        }
     }
 }

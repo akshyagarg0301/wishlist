@@ -3,6 +3,7 @@ package com.mywishlist.api;
 import com.mywishlist.api.dto.OccasionDtos.CreateOccasionRequest;
 import com.mywishlist.api.dto.OccasionDtos.OccasionResponse;
 import com.mywishlist.domain.Occasion;
+import com.mywishlist.security.CurrentUserContext;
 import com.mywishlist.service.OccasionService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -15,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/recipients/{recipientId}/occasions")
+@RequestMapping("/api/occasions")
 public class OccasionController {
     private final OccasionService occasionService;
 
@@ -24,11 +25,10 @@ public class OccasionController {
     }
 
     @PostMapping
-    public OccasionResponse create(@PathVariable String recipientId,
-                                   @Valid @RequestBody CreateOccasionRequest request) {
+    public OccasionResponse create(@Valid @RequestBody CreateOccasionRequest request) {
         boolean surpriseMode = request.surpriseMode() == null || request.surpriseMode();
         Occasion occasion = occasionService.create(
-                recipientId,
+                CurrentUserContext.getUserId(),
                 request.title(),
                 request.eventDate(),
                 request.imageUrl(),
@@ -38,15 +38,15 @@ public class OccasionController {
     }
 
     @GetMapping
-    public List<OccasionResponse> list(@PathVariable String recipientId) {
-        return occasionService.listForRecipient(recipientId).stream()
+    public List<OccasionResponse> list() {
+        return occasionService.listForRecipient(CurrentUserContext.getUserId()).stream()
                 .map(this::toResponse)
                 .toList();
     }
 
     @DeleteMapping("/{occasionId}")
-    public void delete(@PathVariable String recipientId, @PathVariable String occasionId) {
-        occasionService.delete(occasionId, recipientId);
+    public void delete(@PathVariable String occasionId) {
+        occasionService.delete(occasionId, CurrentUserContext.getUserId());
     }
 
     private OccasionResponse toResponse(Occasion occasion) {
@@ -58,7 +58,8 @@ public class OccasionController {
                 occasion.getRecipientId(),
                 occasion.isSurpriseMode(),
                 occasion.isRevealUnlocked(),
-                occasion.getRevealAt()
+                occasion.getRevealAt(),
+                occasionService.isExpired(occasion)
         );
     }
 }

@@ -37,31 +37,35 @@ export const api = {
     }),
 
   // Occasions
-  getOccasions: (recipientId) => request(`/api/recipients/${recipientId}/occasions`),
+  getOccasions: () => request('/api/occasions'),
   getOccasion: (occasionId) => request(`/api/occasions/${occasionId}`),
-  createOccasion: async (recipientId, data) =>
-    request(`/api/recipients/${recipientId}/occasions`, {
+  createOccasion: async (data) =>
+    request('/api/occasions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }),
-  deleteOccasion: (recipientId, occasionId) =>
-    request(`/api/recipients/${recipientId}/occasions/${occasionId}`, {
+  deleteOccasion: (occasionId) =>
+    request(`/api/occasions/${occasionId}`, {
       method: 'DELETE',
     }),
 
   // Gifts
-  getGifts: (recipientId) => request(`/api/recipients/${recipientId}/gifts`),
+  getGifts: () => request('/api/gifts'),
   getOccasionGifts: (occasionId) => request(`/api/occasions/${occasionId}/gifts`),
-  createGift: (recipientId, data) =>
-    request(`/api/recipients/${recipientId}/gifts`, {
+  createGift: (data) =>
+    request('/api/gifts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }),
-  deleteGift: (recipientId, giftId) =>
-    request(`/api/recipients/${recipientId}/gifts/${giftId}`, {
+  deleteGift: (giftId) =>
+    request(`/api/gifts/${giftId}`, {
       method: 'DELETE',
+    }),
+  purchaseOwnerGift: (giftId) =>
+    request(`/api/gifts/${giftId}/purchase`, {
+      method: 'POST',
     }),
   reserveGift: (giftId, guestName, guestEmail) =>
     request(`/api/gifts/${giftId}/reserve`, {

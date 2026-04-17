@@ -1,13 +1,14 @@
 package com.mywishlist.api.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public class OccasionDtos {
     public record CreateOccasionRequest(
             @NotBlank @Size(max = 150) String title,
-            LocalDate eventDate,
+            @FutureOrPresent LocalDate eventDate,
             String imageUrl,
             Boolean surpriseMode
     ) {
@@ -21,7 +22,8 @@ public class OccasionDtos {
             String recipientId,
             boolean surpriseMode,
             boolean revealUnlocked,
-            LocalDate revealAt
+            LocalDate revealAt,
+            boolean expired
     ) {
     }
 }

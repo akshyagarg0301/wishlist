@@ -1,5 +1,4 @@
 const API_BASE = "https://wishlist-1-6omc.onrender.com";
-const activeUserEl = document.getElementById("active-user");
 const authModal = document.getElementById("auth-modal");
 const createModal = document.getElementById("create-modal");
 
@@ -20,6 +19,10 @@ const myOccasionEmpty = document.getElementById("my-occasion-empty");
 
 const toastContainer = document.getElementById("toast-container");
 
+if (occasionDateInput) {
+  occasionDateInput.min = getTodayDateValue();
+}
+
 function showModal(modal) {
   modal.classList.add("show");
   modal.setAttribute("aria-hidden", "false");
@@ -28,18 +31,6 @@ function showModal(modal) {
 function hideModal(modal) {
   modal.classList.remove("show");
   modal.setAttribute("aria-hidden", "true");
-}
-
-function setActiveUser(id) {
-  const trimmed = (id || "").trim();
-  localStorage.setItem("activeUserId", trimmed);
-  if (activeUserEl) {
-    activeUserEl.textContent = trimmed ? trimmed : "Not set";
-  }
-}
-
-function getActiveUserId() {
-  return localStorage.getItem("activeUserId") || "";
 }
 
 function setAuthResult(el, message, isError = false) {
@@ -65,8 +56,6 @@ async function request(path, options = {}) {
   }
   return text ? JSON.parse(text) : null;
 }
-
-setActiveUser(getActiveUserId());
 
 const authAction = document.getElementById("auth-action");
 const openCreate2 = document.getElementById("open-create-2");
@@ -108,6 +97,14 @@ function showToast(message, type = "success") {
   }, 3000);
 }
 
+function getTodayDateValue() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function renderMyOccasions(items) {
   if (!myOccasionCards) return;
   myOccasions = [...items];
@@ -119,10 +116,10 @@ function renderMyOccasions(items) {
       <article class="wishlist-card" data-occasion-id="${item.id}">
         <div class="wishlist-cover ${covers[index % covers.length]}"></div>
         <div class="wishlist-body">
-          <span class="pill">Occasion</span>
+          <span class="pill">${item.expired ? "Expired" : "Occasion"}</span>
           <h3>${item.title}</h3>
           <div class="meta">
-            <span>${item.eventDate || "No date"}</span>
+            <span>${item.eventDate || "No date"}${item.expired ? " · Expired" : ""}</span>
           </div>
           <div class="progress"><span style="width: 0%"></span></div>
           <div class="actions">
@@ -155,10 +152,8 @@ function resetCreateOccasionForm() {
 
 async function refreshMyOccasions() {
   if (!isLoggedIn || !myOccasionCards) return;
-  const recipientId = getActiveUserId();
-  if (!recipientId) return;
   try {
-    const data = await request(`/api/recipients/${recipientId}/occasions`, {
+    const data = await request("/api/occasions", {
       headers: {},
     });
     renderMyOccasions(data);
@@ -172,8 +167,7 @@ async function refreshMyOccasions() {
 
 async function checkAuth() {
   try {
-    const data = await request("/api/auth/me");
-    setActiveUser(data.userId);
+    await request("/api/auth/me");
     isLoggedIn = true;
   } catch (err) {
     isLoggedIn = false;
@@ -191,7 +185,6 @@ authAction?.addEventListener("click", async () => {
       // ignore logout errors
     }
     isLoggedIn = false;
-    setActiveUser("");
     updateAuthAction();
     updateLoggedState();
     if (myOccasionEmpty) {
@@ -253,7 +246,6 @@ loginBtn.addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    setActiveUser(data.userId);
     setAuthResult(loginResult, "Login successful.");
     isLoggedIn = true;
     updateAuthAction();
@@ -287,8 +279,7 @@ createUserBtn.addEventListener("click", async () => {
 });
 
 createOccasionBtn.addEventListener("click", async () => {
-  const recipientId = getActiveUserId();
-  if (!recipientId) {
+  if (!isLoggedIn) {
     showToast("Please log in to create an occasion.", "error");
     return;
   }
@@ -299,8 +290,12 @@ createOccasionBtn.addEventListener("click", async () => {
     showToast("Occasion title required.", "error");
     return;
   }
+  if (eventDate && eventDate < getTodayDateValue()) {
+    showToast("Event date must be today or in the future.", "error");
+    return;
+  }
   try {
-    const data = await request(`/api/recipients/${recipientId}/occasions`, {
+    const data = await request("/api/occasions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, eventDate: eventDate || null, imageUrl }),
@@ -321,7 +316,7 @@ myOccasionCards?.addEventListener("click", (event) => {
     const id = deleteBtn.dataset.occasionId;
     if (!id) return;
     if (!confirm("Delete this occasion?")) return;
-    request(`/api/recipients/${getActiveUserId()}/occasions/${id}`, { method: "DELETE" })
+    request(`/api/occasions/${id}`, { method: "DELETE" })
       .then(() => refreshMyOccasions())
       .catch((err) => showToast(err.message, "error"));
     return;

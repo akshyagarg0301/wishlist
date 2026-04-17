@@ -11,7 +11,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.CrossOriginEmbedderPolicyHeaderWriter;
 import org.springframework.security.web.header.writers.CrossOriginOpenerPolicyHeaderWriter;
-import org.springframework.security.config.Customizer;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -43,8 +42,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/guests/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users", "/api/auth/login", "/api/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/auth/me").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/occasions/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/occasions/*/gifts").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/occasions/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/guests/**", "/api/gifts/*/reserve", "/api/gifts/*/purchase-guest").permitAll()
                         .anyRequest().authenticated()
                 )

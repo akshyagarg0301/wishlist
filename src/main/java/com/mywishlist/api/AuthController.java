@@ -4,6 +4,7 @@ import com.mywishlist.api.dto.AuthDtos.LoginRequest;
 import com.mywishlist.api.dto.AuthDtos.LoginResponse;
 import com.mywishlist.api.dto.AuthDtos.MeResponse;
 import com.mywishlist.domain.User;
+import com.mywishlist.security.CurrentUserContext;
 import com.mywishlist.security.JwtService;
 import com.mywishlist.service.UserService;
 import jakarta.validation.Valid;
@@ -11,8 +12,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -62,12 +61,7 @@ public class AuthController {
 
     @GetMapping("/me")
     public MeResponse me() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getPrincipal() == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
-        }
-        String userId = authentication.getPrincipal().toString();
-        User user = userService.get(userId);
+        User user = userService.get(CurrentUserContext.getUserId());
         return new MeResponse(user.getId(), user.getName(), user.getEmail());
     }
 }

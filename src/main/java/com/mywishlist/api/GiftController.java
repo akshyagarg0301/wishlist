@@ -4,9 +4,9 @@ import com.mywishlist.api.dto.GiftDtos.CreateGiftItemRequest;
 import com.mywishlist.api.dto.GiftDtos.GiftItemResponse;
 import com.mywishlist.api.dto.GiftDtos.GuestGiftActionRequest;
 import com.mywishlist.api.dto.GiftDtos.PublicGiftItemResponse;
-import com.mywishlist.api.dto.GiftDtos.PurchaseGiftRequest;
 import com.mywishlist.domain.GiftItem;
 import com.mywishlist.domain.Occasion;
+import com.mywishlist.security.CurrentUserContext;
 import com.mywishlist.service.GiftService;
 import com.mywishlist.service.OccasionService;
 import com.mywishlist.security.JwtService;
@@ -37,11 +37,10 @@ public class GiftController {
         this.jwtService = jwtService;
     }
 
-    @PostMapping("/recipients/{recipientId}/gifts")
-    public GiftItemResponse create(@PathVariable String recipientId,
-                                   @Valid @RequestBody CreateGiftItemRequest request) {
+    @PostMapping("/gifts")
+    public GiftItemResponse create(@Valid @RequestBody CreateGiftItemRequest request) {
         GiftItem item = giftService.create(
-                recipientId,
+                CurrentUserContext.getUserId(),
                 request.name(),
                 request.description(),
                 request.imageUrl(),
@@ -51,16 +50,16 @@ public class GiftController {
         return toOwnerResponse(item);
     }
 
-    @GetMapping("/recipients/{recipientId}/gifts")
-    public List<GiftItemResponse> list(@PathVariable String recipientId) {
-        return giftService.listForRecipient(recipientId).stream()
+    @GetMapping("/gifts")
+    public List<GiftItemResponse> list() {
+        return giftService.listForRecipient(CurrentUserContext.getUserId()).stream()
                 .map(this::toOwnerResponse)
                 .toList();
     }
 
-    @DeleteMapping("/recipients/{recipientId}/gifts/{giftId}")
-    public void delete(@PathVariable String recipientId, @PathVariable String giftId) {
-        giftService.delete(giftId, recipientId);
+    @DeleteMapping("/gifts/{giftId}")
+    public void delete(@PathVariable String giftId) {
+        giftService.delete(giftId, CurrentUserContext.getUserId());
     }
 
     @GetMapping("/occasions/{occasionId}/gifts")
@@ -71,9 +70,8 @@ public class GiftController {
     }
 
     @PostMapping("/gifts/{giftId}/purchase")
-    public GiftItemResponse purchase(@PathVariable String giftId,
-                                     @Valid @RequestBody PurchaseGiftRequest request) {
-        GiftItem item = giftService.purchase(giftId, request.purchaserId());
+    public GiftItemResponse purchase(@PathVariable String giftId) {
+        GiftItem item = giftService.purchase(giftId, CurrentUserContext.getUserId());
         return toOwnerResponse(item);
     }
 

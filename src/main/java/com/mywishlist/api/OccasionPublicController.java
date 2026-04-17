@@ -45,7 +45,8 @@ public class OccasionPublicController {
                 occasion.getRecipientId(),
                 occasion.isSurpriseMode(),
                 occasion.isRevealUnlocked(),
-                occasion.getRevealAt()
+                occasion.getRevealAt(),
+                occasionService.isExpired(occasion)
         );
     }
 }

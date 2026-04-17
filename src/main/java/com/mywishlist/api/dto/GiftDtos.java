@@ -1,7 +1,6 @@
 package com.mywishlist.api.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.time.Instant;
 
@@ -29,9 +28,6 @@ public class GiftDtos {
             String buyerPhone,
             Instant purchasedAt
     ) {
-    }
-
-    public record PurchaseGiftRequest(@NotNull String purchaserId) {
     }
 
     public record GuestGiftActionRequest(@NotBlank String guestName, @NotBlank String guestEmail) {

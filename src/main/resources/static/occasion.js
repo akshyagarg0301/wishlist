@@ -1,7 +1,9 @@
 const API_BASE = "https://wishlist-1-6omc.onrender.com";
 const toastContainer = document.getElementById("toast-container");
+const occasionPillEl = document.getElementById("occasion-pill");
 const titleEl = document.getElementById("occasion-title");
 const dateEl = document.getElementById("occasion-date");
+const expiredNoteEl = document.getElementById("expired-note");
 const newGiftBtn = document.getElementById("new-gift-btn");
 const ownerControls = document.getElementById("owner-controls");
 const revealBuyersBtn = document.getElementById("reveal-buyers");
@@ -26,7 +28,7 @@ const giftImage = document.getElementById("gift-image");
 const giftLink = document.getElementById("gift-link");
 const createGiftBtn = document.getElementById("create-gift");
 
-let recipientId = "";
+let currentUserId = "";
 let occasionId = "";
 let isOwner = false;
 let guestVerified = false;
@@ -90,11 +92,14 @@ function renderOwnerGifts(items) {
   ownerGiftItems = [...items];
   if (!items.length) {
     ownerGiftList.innerHTML = "";
+    ownerGiftEmpty.textContent = isOccasionExpired()
+      ? "This occasion is expired. It can only be deleted."
+      : "No gifts added yet. Click \"+ New Gift\" to add your first item.";
     ownerGiftEmpty.classList.remove("hidden");
     return;
   }
   ownerGiftEmpty.classList.add("hidden");
-ownerGiftList.innerHTML = items
+  ownerGiftList.innerHTML = items
     .map((item) => {
       const buyerLabel =
         item.status === "AVAILABLE"
@@ -111,9 +116,13 @@ ownerGiftList.innerHTML = items
             <h4>${item.name}</h4>
             <p>${item.description || "No description"}</p>
             <div class="hint">${buyerLabel}</div>
-            <div class="actions">
-              <button class="ghost small danger" data-action="delete-gift" data-gift-id="${item.id}">Delete</button>
-            </div>
+            ${
+              isOccasionExpired()
+                ? ""
+                : `<div class="actions">
+                    <button class="ghost small danger" data-action="delete-gift" data-gift-id="${item.id}">Delete</button>
+                  </div>`
+            }
           </div>
           <div class="price">${item.status}</div>
         </div>
@@ -186,10 +195,14 @@ ownerGiftList?.addEventListener("click", (event) => {
   const deleteBtn = event.target.closest("[data-action='delete-gift']");
   if (!deleteBtn) return;
   event.preventDefault();
+  if (isOccasionExpired()) {
+    showToast("Expired occasions can only be deleted", "error");
+    return;
+  }
   const giftId = deleteBtn.dataset.giftId;
   if (!giftId) return;
   if (!confirm("Delete this gift item?")) return;
-  request(`/api/recipients/${recipientId}/gifts/${giftId}`, { method: "DELETE" })
+  request(`/api/gifts/${giftId}`, { method: "DELETE" })
     .then(() => loadGifts())
     .catch((err) => showToast(err.message, "error"));
 });
@@ -218,10 +231,18 @@ function isRevealActive() {
   return false;
 }
 
+function isOccasionExpired() {
+  return Boolean(occasionData?.expired);
+}
+
 async function loadOccasion() {
   occasionData = await request(`/api/occasions/${occasionId}`);
+  if (occasionPillEl) {
+    occasionPillEl.textContent = occasionData.expired ? "Expired" : "Occasion";
+  }
   titleEl.textContent = occasionData.title;
-  dateEl.textContent = occasionData.eventDate || "No date";
+  dateEl.textContent = `${occasionData.eventDate || "No date"}${occasionData.expired ? " · Expired" : ""}`;
+  expiredNoteEl?.classList.toggle("hidden", !occasionData.expired || !isOwner);
   if (occasionData.surpriseMode) {
     revealHint.textContent = "Surprise mode is ON. Buyers stay hidden until reveal.";
     revealBuyersBtn.classList.remove("hidden");
@@ -239,7 +260,7 @@ async function loadOccasion() {
 
 async function loadGifts() {
   if (isOwner) {
-    const gifts = await request(`/api/recipients/${recipientId}/gifts`);
+    const gifts = await request("/api/gifts");
     const filtered = gifts.filter((gift) => gift.occasionId === occasionId);
     renderOwnerGifts(filtered);
     return;
@@ -249,6 +270,10 @@ async function loadGifts() {
 }
 
 newGiftBtn?.addEventListener("click", () => {
+  if (isOccasionExpired()) {
+    showToast("Expired occasions can only be deleted", "error");
+    return;
+  }
   showModal(giftModal);
   giftName?.focus();
 });
@@ -262,6 +287,10 @@ giftModal?.addEventListener("click", (event) => {
 });
 
 createGiftBtn?.addEventListener("click", async () => {
+  if (isOccasionExpired()) {
+    showToast("Expired occasions can only be deleted", "error");
+    return;
+  }
   const name = giftName.value.trim();
   const description = giftDescription.value.trim();
   const imageUrl = giftImage.value.trim();
@@ -279,7 +308,7 @@ createGiftBtn?.addEventListener("click", async () => {
     return;
   }
   try {
-    const data = await request(`/api/recipients/${recipientId}/gifts`, {
+    const data = await request("/api/gifts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -354,6 +383,10 @@ revealBuyersBtn?.addEventListener("click", async () => {
     if (!occasionData?.surpriseMode) {
       return;
     }
+    if (isOccasionExpired()) {
+      showToast("Expired occasions can only be deleted", "error");
+      return;
+    }
     if (isRevealActive() && !occasionData.revealUnlocked) {
       showToast("Auto reveal is active. Buyers cannot be hidden now.", "error");
       return;
@@ -383,8 +416,7 @@ async function init() {
     }
     try {
       const me = await request("/api/auth/me");
-      recipientId = me.userId;
-      isOwner = true;
+      currentUserId = me.userId;
       try {
         const guest = await request("/api/guests/from-auth", { method: "POST" });
         if (guest && guest.name) {
@@ -396,7 +428,7 @@ async function init() {
         // ignore
       }
     } catch (err) {
-      isOwner = false;
+      currentUserId = "";
     }
     if (!isOwner) {
       try {
@@ -411,8 +443,11 @@ async function init() {
       }
     }
     await loadOccasion();
-    ownerControls.classList.toggle("hidden", !isOwner);
-    newGiftBtn.classList.toggle("hidden", !isOwner);
+    isOwner = Boolean(currentUserId) && occasionData?.recipientId === currentUserId;
+    const canEditOccasion = isOwner && !occasionData?.expired;
+    expiredNoteEl?.classList.toggle("hidden", !occasionData?.expired || !isOwner);
+    ownerControls.classList.toggle("hidden", !canEditOccasion);
+    newGiftBtn.classList.toggle("hidden", !canEditOccasion);
     ownerGiftList.classList.toggle("hidden", !isOwner);
     ownerGiftEmpty.classList.toggle("hidden", !isOwner);
     shareSection?.classList.toggle("hidden", !isOwner);

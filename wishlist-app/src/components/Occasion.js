@@ -21,6 +21,7 @@ export default function Occasion() {
     imageUrl: '',
     purchaseLink: '',
   });
+  const isExpired = Boolean(occasion?.expired);
 
   useEffect(() => {
     loadData();
@@ -38,7 +39,7 @@ export default function Occasion() {
 
       let giftsData;
       if (isOwnerCheck) {
-        giftsData = await api.getGifts(recipientId);
+        giftsData = await api.getGifts();
         giftsData = giftsData.filter((g) => g.occasionId === id);
       } else {
         giftsData = await api.getOccasionGifts(id);
@@ -57,12 +58,16 @@ export default function Occasion() {
 
   async function handleCreateGift(e) {
     e.preventDefault();
+    if (isExpired) {
+      setError('Expired occasions can only be deleted');
+      return;
+    }
     if (!formData.name || !formData.purchaseLink) {
       setError('Name and purchase link required');
       return;
     }
     try {
-      const newGift = await api.createGift(user, { ...formData, occasionId: id });
+      const newGift = await api.createGift({ ...formData, occasionId: id });
       setGifts((current) => [...current, newGift]);
       setShowGiftModal(false);
       setFormData({ name: '', description: '', imageUrl: '', purchaseLink: '' });
@@ -73,9 +78,13 @@ export default function Occasion() {
   }
 
   async function handleDeleteGift(giftId) {
+    if (isExpired) {
+      setError('Expired occasions can only be deleted');
+      return;
+    }
     if (!confirm('Delete this gift?')) return;
     try {
-      await api.deleteGift(user, giftId);
+      await api.deleteGift(giftId);
       loadData();
     } catch (err) {
       setError(err.message);
@@ -132,16 +141,25 @@ export default function Occasion() {
       <section className="section detail">
         <div className="banner">
           <div>
-            <span className="pill">Occasion</span>
+            <span className="pill">{isExpired ? 'Expired' : 'Occasion'}</span>
             <h2>{occasion?.title}</h2>
-            <p>{occasion?.eventDate || 'No date'}</p>
+            <p>
+              {occasion?.eventDate || 'No date'}
+              {isExpired ? ' · Expired' : ''}
+            </p>
           </div>
-          {isOwner && (
+          {isOwner && !isExpired && (
             <button className="primary" onClick={() => setShowGiftModal(true)}>
               + New Gift
             </button>
           )}
         </div>
+
+        {isOwner && isExpired && (
+          <div className="empty-state" style={{ marginTop: 12 }}>
+            This occasion is expired. It can only be deleted.
+          </div>
+        )}
 
         {isOwner && (
           <div className="section-head row" style={{ marginTop: 12 }}>
@@ -160,7 +178,9 @@ export default function Occasion() {
         <h3 className="subhead">Gift Items</h3>
         {gifts.length === 0 && (
           <div className="empty-state">
-            {isOwner
+            {isOwner && isExpired
+              ? 'This occasion is expired. It can only be deleted.'
+              : isOwner
               ? 'No gifts added yet. Click "+ New Gift" to add your first item.'
               : 'No gifts have been added yet.'}
           </div>
@@ -179,7 +199,7 @@ export default function Occasion() {
                     ? `Buyer: ${item.buyerName}`
                     : 'Buyer hidden'}
                 </div>
-                {isOwner && (
+                {isOwner && !isExpired && (
                   <div className="actions">
                     <button
                       className="ghost small danger"

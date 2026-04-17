@@ -7,6 +7,7 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import com.mywishlist.api.dto.GuestDtos.GuestInfo;
 import com.mywishlist.api.dto.GuestDtos.GoogleVerifyRequest;
 import com.mywishlist.domain.User;
+import com.mywishlist.security.CurrentUserContext;
 import com.mywishlist.security.JwtService;
 import com.mywishlist.service.UserService;
 import io.jsonwebtoken.Claims;
@@ -18,8 +19,6 @@ import jakarta.validation.Valid;
 import java.util.Collections;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -77,12 +76,7 @@ public class GuestAuthController {
 
     @PostMapping("/from-auth")
     public GuestInfo fromAuth(HttpServletResponse response) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getPrincipal() == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
-        }
-        String userId = authentication.getPrincipal().toString();
-        User user = userService.get(userId);
+        User user = userService.get(CurrentUserContext.getUserId());
         String token = jwtService.generateGuestToken(user.getName(), user.getEmail());
         ResponseCookie cookie = ResponseCookie.from("guest_token", token)
                 .httpOnly(true)
