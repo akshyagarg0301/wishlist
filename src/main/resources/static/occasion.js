@@ -110,7 +110,7 @@ function renderOwnerGifts(items) {
       return `
       <a class="gift-card-link" href="${link || "#"}" target="_blank" rel="noopener noreferrer" ${link ? "" : "aria-disabled=\"true\""}>
         <div class="gift-card ${item.status === "PURCHASED" ? "purchased" : ""}">
-          <div class="gift-thumb gold"></div>
+          ${renderGiftThumb(item)}
           <div class="gift-info">
             <h4>${item.name}</h4>
             <p>${item.description || "No description"}</p>
@@ -130,6 +130,13 @@ function renderOwnerGifts(items) {
     .join("");
 }
 
+function renderGiftThumb(item) {
+  if (!item.imageUrl) {
+    return `<div class="gift-thumb gold"></div>`;
+  }
+  return `<div class="gift-thumb"><img src="${item.imageUrl}" alt="${item.name}"></div>`;
+}
+
 function renderGuestGifts(items) {
   if (!guestGiftList || !guestGiftEmpty) return;
   guestGiftItems = [...items];
@@ -143,7 +150,7 @@ function renderGuestGifts(items) {
     .map(
       (item) => `
       <div class="gift-card ${item.status === "PURCHASED" ? "purchased" : ""}" data-link="${ensureAbsoluteUrl(item.purchaseLink) || ""}" data-status="${item.status}">
-        <div class="gift-thumb gold"></div>
+        ${renderGiftThumb(item)}
         <div class="gift-info">
           <h4>${item.name}</h4>
           <p>${item.description || "No description"}</p>

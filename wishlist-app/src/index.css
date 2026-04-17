@@ -400,6 +400,8 @@ h1 {
   height: 60px;
   border-radius: 12px;
   background: #f0c27b;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .gift-thumb.teal {
@@ -408,6 +410,13 @@ h1 {
 
 .gift-thumb.rose {
   background: #e3b2b8;
+}
+
+.gift-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .price {

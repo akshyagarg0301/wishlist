@@ -1,0 +1,100 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 340px;
+  font-family: Inter, system-ui, sans-serif;
+  color: #1f2937;
+  background: #f7f4ef;
+}
+
+.popup {
+  padding: 16px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a7363;
+}
+
+h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.message {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #5b4f45;
+}
+
+.card {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 16px;
+  background: #ffffff;
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 12px;
+}
+
+.product-image {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: #f1ebe3;
+}
+
+.product-copy h2 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.product-copy p {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6b5b4d;
+  white-space: pre-wrap;
+}
+
+button {
+  border: 0;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary {
+  width: 100%;
+  margin-top: 16px;
+  background: #d1786b;
+  color: #fff;
+}
+
+.ghost {
+  background: #ece2d8;
+  color: #5b4f45;
+}
+
+.hidden {
+  display: none;
+}

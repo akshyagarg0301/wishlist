@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Import Product</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <nav class="topbar">
+        <div class="brand">
+          <span class="brand-icon">🎁</span>
+          <span class="brand-name">Giftly</span>
+        </div>
+        <div class="nav-actions">
+          <a href="/index.html#my" class="ghost">← Back to My Wishlists</a>
+        </div>
+      </nav>
+
+      <section class="section">
+        <div class="section-head row">
+          <div>
+            <h2>Import Product</h2>
+            <p>Review the product details and save it to one of your occasions.</p>
+          </div>
+        </div>
+
+        <div class="import-layout">
+          <article class="import-card">
+            <div class="import-image-wrap">
+              <img id="import-image-preview" class="import-image hidden" alt="" />
+              <div id="import-image-fallback" class="gift-thumb gold import-image-fallback"></div>
+            </div>
+            <div>
+              <span class="pill muted" id="import-source-pill">Product</span>
+              <h3 id="import-title-preview">Product title</h3>
+              <p id="import-link-preview" class="hint"></p>
+            </div>
+          </article>
+
+          <div class="import-form-card">
+            <div id="import-auth-message" class="empty-state hidden"></div>
+
+            <label>
+              Occasion
+              <select id="import-occasion-select"></select>
+            </label>
+
+            <label>
+              <span class="label-text">Name<span class="required">*</span></span>
+              <input id="import-name" type="text" />
+            </label>
+
+            <label>
+              Description
+              <textarea id="import-description" rows="6"></textarea>
+            </label>
+
+            <label>
+              Image URL
+              <input id="import-image-url" type="url" />
+            </label>
+
+            <label>
+              <span class="label-text">Purchase Link<span class="required">*</span></span>
+              <input id="import-purchase-link" type="url" />
+            </label>
+
+            <div class="footer-actions">
+              <button id="import-save" class="primary" type="button">Save to Occasion</button>
+              <button id="import-open-occasion" class="ghost hidden" type="button">Open Occasion</button>
+            </div>
+
+            <div id="import-result" class="result hidden" role="status"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script src="/import.js"></script>
+  </body>
+  </html>

@@ -11,6 +11,17 @@ Open the UI at http://localhost:8080/
 
 JWT config lives in `src/main/resources/application.properties`. Set `jwt.secret` to a long random string (32+ chars).
 
+## Browser Extension
+The repo now includes a Chrome extension scaffold in `browser-extension/`.
+
+Flow:
+1. Open an Amazon product page.
+2. Use the extension popup.
+3. It opens `import.html` on your Giftly backend with the product prefilled.
+4. Pick an occasion and save the gift.
+
+For local development, set the extension's Giftly base URL to `http://localhost:8080` in the extension options page.
+
 ## Core Endpoints
 All requests except `POST /api/users` and `POST /api/auth/login` require an `Authorization: Bearer <token>` header.
 

@@ -400,6 +400,8 @@ h1 {
   height: 60px;
   border-radius: 12px;
   background: #f0c27b;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .gift-thumb.teal {
@@ -408,6 +410,13 @@ h1 {
 
 .gift-thumb.rose {
   background: #e3b2b8;
+}
+
+.gift-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .price {
@@ -523,6 +532,53 @@ h1 {
   gap: 24px;
 }
 
+.import-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 24px;
+}
+
+.import-card,
+.import-form-card {
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.import-card {
+  display: grid;
+  gap: 16px;
+}
+
+.import-image-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  border-radius: 16px;
+  background: #f7f1ea;
+}
+
+.import-image {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+}
+
+.import-image-fallback {
+  width: 96px;
+  height: 96px;
+}
+
+.import-form-card select {
+  border: 1px solid #e2d7cc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-family: inherit;
+  background: #fdfbf8;
+}
+
 .modal-footer {
   margin-top: 20px;
 }
@@ -630,5 +686,9 @@ textarea {
   .gift-card {
     grid-template-columns: 1fr;
     text-align: left;
+  }
+
+  .import-layout {
+    grid-template-columns: 1fr;
   }
 }

@@ -188,7 +188,9 @@ export default function Occasion() {
         <div className="gift-list">
           {gifts.map((item) => (
             <div key={item.id} className={`gift-card ${item.status === 'PURCHASED' ? 'purchased' : ''}`}>
-              <div className="gift-thumb gold"></div>
+              <div className="gift-thumb gold">
+                {item.imageUrl ? <img src={item.imageUrl} alt={item.name} /> : null}
+              </div>
               <div className="gift-info">
                 <h4>{item.name}</h4>
                 <p>{item.description || 'No description'}</p>
