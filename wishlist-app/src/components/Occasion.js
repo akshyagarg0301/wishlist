@@ -57,12 +57,23 @@ export default function Occasion() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   }
 
-  function isSupportedProductLink(value) {
-    const normalized = (value || '').toLowerCase();
-    return normalized.includes('amazon.') || normalized.includes('amzn.to');
+  function looksLikeProductLink(value) {
+    if (!value) {
+      return false;
+    }
+    try {
+      const normalized = value.startsWith('http://') || value.startsWith('https://')
+        ? value
+        : `https://${value}`;
+      const url = new URL(normalized);
+      return Boolean(url.hostname && url.hostname.includes('.'));
+    } catch (err) {
+      return false;
+    }
   }
 
-  async function handleFetchProductDetails(link = formData.purchaseLink) {
+  async function handleFetchProductDetails(link = formData.purchaseLink, options = {}) {
+    const { silent = false } = options;
     if (!link) {
       return;
     }
@@ -76,9 +87,13 @@ export default function Occasion() {
         imageUrl: current.imageUrl || product.imageUrl || '',
         purchaseLink: product.purchaseLink || current.purchaseLink || link,
       }));
-      setError('');
+      if (!silent) {
+        setError('');
+      }
     } catch (err) {
-      setError(err.message);
+      if (!silent) {
+        setError(err.message);
+      }
     } finally {
       setGiftPreviewLoading(false);
     }
@@ -307,25 +322,25 @@ export default function Occasion() {
                     const pastedLink = e.clipboardData?.getData('text') || '';
                     window.setTimeout(() => {
                       if (
-                        isSupportedProductLink(pastedLink) &&
+                        looksLikeProductLink(pastedLink) &&
                         !formData.name &&
                         !formData.description &&
                         !formData.imageUrl &&
                         !giftPreviewLoading
                       ) {
-                        handleFetchProductDetails(pastedLink);
+                        handleFetchProductDetails(pastedLink, { silent: true });
                       }
                     }, 0);
                   }}
                   onBlur={() => {
                     if (
-                      isSupportedProductLink(formData.purchaseLink) &&
+                      looksLikeProductLink(formData.purchaseLink) &&
                       !formData.name &&
                       !formData.description &&
                       !formData.imageUrl &&
                       !giftPreviewLoading
                     ) {
-                      handleFetchProductDetails();
+                      handleFetchProductDetails(formData.purchaseLink, { silent: true });
                     }
                   }}
                   placeholder="https://store.example.com/item"

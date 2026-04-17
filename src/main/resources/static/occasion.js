@@ -206,9 +206,19 @@ async function previewProductFromLink(url) {
   });
 }
 
-function isSupportedProductLink(value) {
-  const normalized = (value || "").toLowerCase();
-  return normalized.includes("amazon.") || normalized.includes("amzn.to");
+function looksLikeProductLink(value) {
+  if (!value) {
+    return false;
+  }
+  try {
+    const normalized = value.startsWith("http://") || value.startsWith("https://")
+      ? value
+      : `https://${value}`;
+    const url = new URL(normalized);
+    return Boolean(url.hostname && url.hostname.includes("."));
+  } catch (err) {
+    return false;
+  }
 }
 
 async function autofillGiftFromLink() {
@@ -387,7 +397,7 @@ createGiftBtn?.addEventListener("click", async () => {
 
 giftLink?.addEventListener("blur", () => {
   const value = giftLink.value.trim();
-  if (!isSupportedProductLink(value)) {
+  if (!looksLikeProductLink(value)) {
     return;
   }
   if (giftName?.value.trim() || giftDescription?.value.trim() || giftImage?.value.trim()) {
@@ -399,7 +409,7 @@ giftLink?.addEventListener("blur", () => {
 giftLink?.addEventListener("paste", () => {
   window.setTimeout(() => {
     const value = giftLink.value.trim();
-    if (!isSupportedProductLink(value)) {
+    if (!looksLikeProductLink(value)) {
       return;
     }
     if (giftName?.value.trim() || giftDescription?.value.trim() || giftImage?.value.trim()) {

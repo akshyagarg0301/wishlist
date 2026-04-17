@@ -82,6 +82,21 @@ async function previewProductFromLink(url) {
   });
 }
 
+function looksLikeProductLink(value) {
+  if (!value) {
+    return false;
+  }
+  try {
+    const normalized = value.startsWith("http://") || value.startsWith("https://")
+      ? value
+      : `https://${value}`;
+    const url = new URL(normalized);
+    return Boolean(url.hostname && url.hostname.includes("."));
+  } catch (err) {
+    return false;
+  }
+}
+
 function renderOccasions() {
   const activeOccasions = occasions.filter((occasion) => !occasion.expired);
   if (!activeOccasions.length) {
@@ -140,8 +155,8 @@ saveButton.addEventListener("click", async () => {
     occasionId
   };
 
-  if (!payload.name || !payload.purchaseLink || !occasionId) {
-    setResult("Name, purchase link, and occasion are required.", true);
+  if (!payload.purchaseLink || !occasionId) {
+    setResult("Purchase link and occasion are required.", true);
     return;
   }
 
@@ -160,6 +175,28 @@ saveButton.addEventListener("click", async () => {
   } finally {
     saveButton.disabled = false;
   }
+});
+
+sourceUrlInput.addEventListener("blur", () => {
+  if (!looksLikeProductLink(sourceUrlInput.value.trim())) {
+    return;
+  }
+  if (nameInput.value.trim() || descriptionInput.value.trim() || imageUrlInput.value.trim()) {
+    return;
+  }
+  loadProductFromLink().catch(() => {});
+});
+
+sourceUrlInput.addEventListener("paste", () => {
+  window.setTimeout(() => {
+    if (!looksLikeProductLink(sourceUrlInput.value.trim())) {
+      return;
+    }
+    if (nameInput.value.trim() || descriptionInput.value.trim() || imageUrlInput.value.trim()) {
+      return;
+    }
+    loadProductFromLink().catch(() => {});
+  }, 0);
 });
 
 loadLinkButton.addEventListener("click", () => {
