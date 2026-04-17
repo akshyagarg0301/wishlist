@@ -7,6 +7,8 @@ import { api } from '../services/api';
 export default function Home() {
   const { user, loading: authLoading, login, logout, signup } = useAuth();
   const navigate = useNavigate();
+  
+  const isLoggedIn = !authLoading && user && typeof user === 'string' && user.trim().length > 0;
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authTab, setAuthTab] = useState('login');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -110,7 +112,7 @@ export default function Home() {
           <a href="#my" className="nav-link">My Wishlists</a>
         </div>
         <div className="nav-actions">
-          {user ? (
+          {isLoggedIn ? (
             <button className="ghost" onClick={logout}>
               Sign Out
             </button>
@@ -171,7 +173,7 @@ export default function Home() {
             <h2>My Wishlists</h2>
             <p>Create and manage your gift wishlists.</p>
           </div>
-          {user && !authLoading ? (
+          {isLoggedIn ? (
             <button className="primary" onClick={() => setShowCreateModal(true)}>
               + New Wishlist
             </button>
@@ -210,12 +212,12 @@ export default function Home() {
               </article>
             </>
           )}
-          {user && loading && <div className="empty-state">Loading...</div>}
-          {user &&
+          {isLoggedIn && loading && <div className="empty-state">Loading...</div>}
+          {isLoggedIn &&
             !loading &&
             occasions.length === 0 &&
             !error && <div className="empty-state">You have no wishlists yet.</div>}
-          {user && occasions.length > 0 && (
+          {isLoggedIn && occasions.length > 0 && (
             <div className="grid-contents">
               {occasions.map((item, index) => (
                 <article
