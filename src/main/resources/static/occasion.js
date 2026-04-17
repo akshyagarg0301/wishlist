@@ -28,7 +28,6 @@ const giftImage = document.getElementById("gift-image");
 const giftLink = document.getElementById("gift-link");
 const createGiftBtn = document.getElementById("create-gift");
 
-let currentUserId = "";
 let occasionId = "";
 let isOwner = false;
 let guestVerified = false;
@@ -203,7 +202,7 @@ ownerGiftList?.addEventListener("click", (event) => {
   if (!giftId) return;
   if (!confirm("Delete this gift item?")) return;
   request(`/api/gifts/${giftId}`, { method: "DELETE" })
-    .then(() => loadGifts())
+    .then(() => loadOccasionPage())
     .catch((err) => showToast(err.message, "error"));
 });
 
@@ -235,14 +234,27 @@ function isOccasionExpired() {
   return Boolean(occasionData?.expired);
 }
 
-async function loadOccasion() {
-  occasionData = await request(`/api/occasions/${occasionId}`);
+function applyOccasionPage(pageData) {
+  occasionData = pageData.occasion;
+  isOwner = Boolean(pageData.owner);
+  guestVerified = Boolean(pageData.guestVerified);
+  guestName = pageData.guestName || "";
+  guestEmail = pageData.guestEmail || "";
+
   if (occasionPillEl) {
     occasionPillEl.textContent = occasionData.expired ? "Expired" : "Occasion";
   }
   titleEl.textContent = occasionData.title;
   dateEl.textContent = `${occasionData.eventDate || "No date"}${occasionData.expired ? " · Expired" : ""}`;
+  const canEditOccasion = isOwner && !occasionData?.expired;
   expiredNoteEl?.classList.toggle("hidden", !occasionData.expired || !isOwner);
+  ownerControls.classList.toggle("hidden", !canEditOccasion);
+  newGiftBtn.classList.toggle("hidden", !canEditOccasion);
+  ownerGiftList.classList.toggle("hidden", !isOwner);
+  ownerGiftEmpty.classList.toggle("hidden", !isOwner);
+  shareSection?.classList.toggle("hidden", !isOwner);
+  guestGiftList.classList.toggle("hidden", isOwner);
+  guestGiftEmpty.classList.toggle("hidden", isOwner);
   if (occasionData.surpriseMode) {
     revealHint.textContent = "Surprise mode is ON. Buyers stay hidden until reveal.";
     revealBuyersBtn.classList.remove("hidden");
@@ -256,17 +268,17 @@ async function loadOccasion() {
       ? `Hide buyers ${icon}`
       : `Reveal buyers ${icon}`;
   }
+
+  if (isOwner) {
+    renderOwnerGifts(pageData.gifts || []);
+  } else {
+    renderGuestGifts(pageData.gifts || []);
+  }
 }
 
-async function loadGifts() {
-  if (isOwner) {
-    const gifts = await request("/api/gifts");
-    const filtered = gifts.filter((gift) => gift.occasionId === occasionId);
-    renderOwnerGifts(filtered);
-    return;
-  }
-  const gifts = await request(`/api/occasions/${occasionId}/gifts`);
-  renderGuestGifts(gifts);
+async function loadOccasionPage() {
+  const pageData = await request(`/api/occasions/${occasionId}/page`);
+  applyOccasionPage(pageData);
 }
 
 newGiftBtn?.addEventListener("click", () => {
@@ -351,7 +363,7 @@ guestGiftList?.addEventListener("click", async (event) => {
       });
       showToast("Gift marked purchased.");
     }
-    await loadGifts();
+    await loadOccasionPage();
   } catch (err) {
     showToast(err.message, "error");
   }
@@ -392,11 +404,9 @@ revealBuyersBtn?.addEventListener("click", async () => {
       return;
     }
     const endpoint = isRevealActive() ? "hide" : "reveal";
-    const data = await request(`/api/occasions/${occasionId}/${endpoint}`, { method: "POST" });
-    occasionData = data;
+    await request(`/api/occasions/${occasionId}/${endpoint}`, { method: "POST" });
     showToast(endpoint === "reveal" ? "Buyers revealed." : "Buyers hidden.");
-    await loadGifts();
-    await loadOccasion();
+    await loadOccasionPage();
   } catch (err) {
     showToast(err.message, "error");
   }
@@ -414,46 +424,7 @@ async function init() {
     if (shareLinkInput) {
       shareLinkInput.value = shareUrl;
     }
-    try {
-      const me = await request("/api/auth/me");
-      currentUserId = me.userId;
-      try {
-        const guest = await request("/api/guests/from-auth", { method: "POST" });
-        if (guest && guest.name) {
-          guestName = guest.name;
-          guestEmail = guest.email;
-          guestVerified = true;
-        }
-      } catch (err) {
-        // ignore
-      }
-    } catch (err) {
-      currentUserId = "";
-    }
-    if (!isOwner) {
-      try {
-        const guest = await request("/api/guests/me");
-        if (guest && guest.name) {
-          guestName = guest.name;
-          guestEmail = guest.email;
-          guestVerified = true;
-        }
-      } catch (err) {
-        // ignore
-      }
-    }
-    await loadOccasion();
-    isOwner = Boolean(currentUserId) && occasionData?.recipientId === currentUserId;
-    const canEditOccasion = isOwner && !occasionData?.expired;
-    expiredNoteEl?.classList.toggle("hidden", !occasionData?.expired || !isOwner);
-    ownerControls.classList.toggle("hidden", !canEditOccasion);
-    newGiftBtn.classList.toggle("hidden", !canEditOccasion);
-    ownerGiftList.classList.toggle("hidden", !isOwner);
-    ownerGiftEmpty.classList.toggle("hidden", !isOwner);
-    shareSection?.classList.toggle("hidden", !isOwner);
-    guestGiftList.classList.toggle("hidden", isOwner);
-    guestGiftEmpty.classList.toggle("hidden", isOwner);
-    await loadGifts();
+    await loadOccasionPage();
     initGoogleSignIn();
   } catch (err) {
     showToast(err.message, "error");
@@ -477,7 +448,7 @@ function initGoogleSignIn() {
         guestVerified = true;
         hideGuestAuth();
         showToast("Signed in.");
-        await loadGifts();
+        renderGuestGifts(guestGiftItems);
       } catch (err) {
         showToast(err.message, "error");
       }

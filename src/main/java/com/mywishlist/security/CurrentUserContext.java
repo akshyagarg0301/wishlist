@@ -10,9 +10,17 @@ public final class CurrentUserContext {
     }
 
     public static String getUserId() {
+        String userId = getUserIdOrNull();
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+        }
+        return userId;
+    }
+
+    public static String getUserIdOrNull() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication.getPrincipal() == null || !authentication.isAuthenticated()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
+            return null;
         }
         return authentication.getName();
     }

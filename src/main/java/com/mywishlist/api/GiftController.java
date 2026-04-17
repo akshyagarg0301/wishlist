@@ -10,6 +10,7 @@ import com.mywishlist.security.CurrentUserContext;
 import com.mywishlist.service.GiftService;
 import com.mywishlist.service.OccasionService;
 import com.mywishlist.security.JwtService;
+import com.mywishlist.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.Cookie;
@@ -30,11 +31,16 @@ public class GiftController {
     private final GiftService giftService;
     private final OccasionService occasionService;
     private final JwtService jwtService;
+    private final UserService userService;
 
-    public GiftController(GiftService giftService, OccasionService occasionService, JwtService jwtService) {
+    public GiftController(GiftService giftService,
+                          OccasionService occasionService,
+                          JwtService jwtService,
+                          UserService userService) {
         this.giftService = giftService;
         this.occasionService = occasionService;
         this.jwtService = jwtService;
+        this.userService = userService;
     }
 
     @PostMapping("/gifts")
@@ -140,6 +146,13 @@ public class GiftController {
     }
 
     private void requireGuestToken(HttpServletRequest request, String name, String email) {
+        String currentUserId = CurrentUserContext.getUserIdOrNull();
+        if (currentUserId != null) {
+            com.mywishlist.domain.User user = userService.get(currentUserId);
+            if (email.equals(user.getEmail()) && name.equals(user.getName())) {
+                return;
+            }
+        }
         String token = readCookie(request, "guest_token");
         if (token == null) {
             throw new IllegalStateException("Guest verification required");
