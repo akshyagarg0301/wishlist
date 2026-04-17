@@ -34,6 +34,8 @@ let occasionData = null;
 let guestName = "";
 let guestEmail = "";
 let googlePromptShown = false;
+let ownerGiftItems = [];
+let guestGiftItems = [];
 
 function showToast(message, type = "success") {
   if (!toastContainer) return;
@@ -85,6 +87,7 @@ async function request(path, options = {}) {
 
 function renderOwnerGifts(items) {
   if (!ownerGiftList || !ownerGiftEmpty) return;
+  ownerGiftItems = [...items];
   if (!items.length) {
     ownerGiftList.innerHTML = "";
     ownerGiftEmpty.classList.remove("hidden");
@@ -121,6 +124,7 @@ ownerGiftList.innerHTML = items
 
 function renderGuestGifts(items) {
   if (!guestGiftList || !guestGiftEmpty) return;
+  guestGiftItems = [...items];
   if (!items.length) {
     guestGiftList.innerHTML = "";
     guestGiftEmpty.classList.remove("hidden");
@@ -157,6 +161,25 @@ function ensureAbsoluteUrl(url) {
     return trimmed;
   }
   return `https://${trimmed}`;
+}
+
+function appendOwnerGift(item) {
+  renderOwnerGifts([...ownerGiftItems, item]);
+}
+
+function resetGiftForm() {
+  if (giftName) {
+    giftName.value = "";
+  }
+  if (giftDescription) {
+    giftDescription.value = "";
+  }
+  if (giftImage) {
+    giftImage.value = "";
+  }
+  if (giftLink) {
+    giftLink.value = "";
+  }
 }
 
 ownerGiftList?.addEventListener("click", (event) => {
@@ -256,7 +279,7 @@ createGiftBtn?.addEventListener("click", async () => {
     return;
   }
   try {
-    await request(`/api/recipients/${recipientId}/gifts`, {
+    const data = await request(`/api/recipients/${recipientId}/gifts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -267,13 +290,10 @@ createGiftBtn?.addEventListener("click", async () => {
         occasionId,
       }),
     });
-    showToast("Gift Item added successfully.");
-    giftName.value = "";
-    giftDescription.value = "";
-    giftImage.value = "";
-    giftLink.value = "";
+    appendOwnerGift(data);
+    resetGiftForm();
     hideModal(giftModal);
-    await loadGifts();
+    showToast("Gift Item added successfully.");
   } catch (err) {
     showToast(err.message, "error");
   }

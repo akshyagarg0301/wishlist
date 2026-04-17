@@ -62,10 +62,11 @@ export default function Occasion() {
       return;
     }
     try {
-      await api.createGift(user, { ...formData, occasionId: id });
+      const newGift = await api.createGift(user, { ...formData, occasionId: id });
+      setGifts((current) => [...current, newGift]);
       setShowGiftModal(false);
       setFormData({ name: '', description: '', imageUrl: '', purchaseLink: '' });
-      loadData();
+      setError('');
     } catch (err) {
       setError(err.message);
     }

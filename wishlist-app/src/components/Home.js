@@ -276,7 +276,7 @@ export default function Home() {
               </button>
             </div>
             {authTab === 'login' ? (
-              <form onSubmit={handleLogin}>
+              <form className="auth-form" onSubmit={handleLogin}>
                 <h3>Login</h3>
                 <label>
                   Email
@@ -304,7 +304,7 @@ export default function Home() {
                 {error && <div className="result error">{error}</div>}
               </form>
             ) : (
-              <form onSubmit={handleSignup}>
+              <form className="auth-form" onSubmit={handleSignup}>
                 <h3>Sign Up</h3>
                 <label>
                   Email

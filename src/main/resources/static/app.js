@@ -11,6 +11,9 @@ const authTabs = document.querySelectorAll("[data-auth-tab]");
 const authPanels = document.querySelectorAll("[data-auth-panel]");
 
 const createOccasionBtn = document.getElementById("create-occasion");
+const occasionTitleInput = document.getElementById("occasion-title");
+const occasionDateInput = document.getElementById("occasion-date");
+const occasionImageInput = document.getElementById("occasion-image");
 
 const myOccasionCards = document.getElementById("my-occasion-cards");
 const myOccasionEmpty = document.getElementById("my-occasion-empty");
@@ -73,6 +76,7 @@ const closeCreate = document.getElementById("close-create");
 
 let isLoggedIn = false;
 let occasionIndex = new Map();
+let myOccasions = [];
 
 function updateAuthAction() {
   if (!authAction) return;
@@ -106,6 +110,7 @@ function showToast(message, type = "success") {
 
 function renderMyOccasions(items) {
   if (!myOccasionCards) return;
+  myOccasions = [...items];
   occasionIndex = new Map(items.map((item) => [item.id, item]));
   const covers = ["cover-a", "cover-b", "cover-c"];
   myOccasionCards.innerHTML = items
@@ -129,6 +134,22 @@ function renderMyOccasions(items) {
     .join("");
   if (myOccasionEmpty) {
     myOccasionEmpty.classList.toggle("hidden", items.length > 0);
+  }
+}
+
+function appendOccasion(item) {
+  renderMyOccasions([...myOccasions, item]);
+}
+
+function resetCreateOccasionForm() {
+  if (occasionTitleInput) {
+    occasionTitleInput.value = "";
+  }
+  if (occasionDateInput) {
+    occasionDateInput.value = "";
+  }
+  if (occasionImageInput) {
+    occasionImageInput.value = "";
   }
 }
 
@@ -284,8 +305,10 @@ createOccasionBtn.addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, eventDate: eventDate || null, imageUrl }),
     });
+    appendOccasion(data);
+    resetCreateOccasionForm();
+    hideModal(createModal);
     showToast("Occasion added successfully.");
-    await refreshMyOccasions();
   } catch (err) {
     showToast(err.message, "error");
   }
