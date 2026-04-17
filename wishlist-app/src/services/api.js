@@ -39,7 +39,7 @@ export const api = {
   // Occasions
   getOccasions: (recipientId) => request(`/api/recipients/${recipientId}/occasions`),
   getOccasion: (occasionId) => request(`/api/occasions/${occasionId}`),
-  createOccasion: (recipientId, data) =>
+  createOccasion: async (recipientId, data) =>
     request(`/api/recipients/${recipientId}/occasions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

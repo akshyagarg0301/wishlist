@@ -77,14 +77,14 @@ export default function Home() {
       return;
     }
     try {
-      await api.createOccasion(user, {
+      const newOccasion = await api.createOccasion(user, {
         title: formData.title,
         eventDate: formData.eventDate || null,
         imageUrl: formData.imageUrl,
       });
       setShowCreateModal(false);
       setFormData({ ...formData, title: '', eventDate: '', imageUrl: '' });
-      loadOccasions();
+      setOccasions([...occasions, newOccasion]);
     } catch (err) {
       setError(err.message);
     }
