@@ -50,11 +50,11 @@ public class GiftService {
     }
 
     public List<GiftItem> listForRecipient(String recipientId) {
-        return giftItemRepository.findByRecipientId(recipientId);
+        return giftItemRepository.findByRecipientIdAndDeletedFalse(recipientId);
     }
 
     public void delete(String giftId, String recipientId) {
-        GiftItem gift = giftItemRepository.findById(giftId)
+        GiftItem gift = giftItemRepository.findByIdAndDeletedFalse(giftId)
                 .orElseThrow(() -> new NotFoundException("Gift item not found"));
         if (!gift.getRecipientId().equals(recipientId)) {
             throw new NotFoundException("Gift item not found");
@@ -62,11 +62,12 @@ public class GiftService {
         if (gift.getStatus() == GiftStatus.PURCHASED) {
             throw new IllegalStateException("Purchased gifts cannot be deleted");
         }
-        giftItemRepository.delete(gift);
+        gift.setDeleted(true);
+        giftItemRepository.save(gift);
     }
 
     public GiftItem purchase(String giftId, String purchaserId) {
-        GiftItem gift = giftItemRepository.findById(giftId)
+        GiftItem gift = giftItemRepository.findByIdAndDeletedFalse(giftId)
                 .orElseThrow(() -> new NotFoundException("Gift item not found"));
         if (gift.getStatus() == GiftStatus.PURCHASED) {
             return gift;
@@ -77,7 +78,7 @@ public class GiftService {
     }
 
     public GiftItem reserveForGuest(String giftId, String guestName, String guestEmail) {
-        GiftItem gift = giftItemRepository.findById(giftId)
+        GiftItem gift = giftItemRepository.findByIdAndDeletedFalse(giftId)
                 .orElseThrow(() -> new NotFoundException("Gift item not found"));
         if (gift.getStatus() == GiftStatus.PURCHASED) {
             throw new IllegalStateException("Gift already purchased");
@@ -92,7 +93,7 @@ public class GiftService {
     }
 
     public GiftItem purchaseForGuest(String giftId, String guestName, String guestEmail) {
-        GiftItem gift = giftItemRepository.findById(giftId)
+        GiftItem gift = giftItemRepository.findByIdAndDeletedFalse(giftId)
                 .orElseThrow(() -> new NotFoundException("Gift item not found"));
         if (gift.getStatus() == GiftStatus.PURCHASED) {
             throw new IllegalStateException("Gift already purchased");
@@ -107,7 +108,8 @@ public class GiftService {
     }
 
     public List<GiftItem> listForOccasion(String occasionId) {
-        return giftItemRepository.findByOccasionId(occasionId);
+        occasionService.get(occasionId);
+        return giftItemRepository.findByOccasionIdAndDeletedFalse(occasionId);
     }
 
     private String appendVendorTag(String purchaseLink) {

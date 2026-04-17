@@ -1,6 +1,7 @@
 package com.mywishlist.domain;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document("vendors")
@@ -10,6 +11,7 @@ public class Vendor {
 
     private String name;
 
+    @Indexed(unique = true)
     private String domain;
 
     private String tagId;

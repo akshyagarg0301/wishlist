@@ -5,5 +5,6 @@ import java.util.List;
 import org.springframework.data.mongodb.repository.MongoRepository;
 
 public interface OccasionRepository extends MongoRepository<Occasion, String> {
-    List<Occasion> findByRecipientId(String recipientId);
+    java.util.Optional<Occasion> findByIdAndDeletedFalse(String id);
+    List<Occasion> findByRecipientIdAndDeletedFalse(String recipientId);
 }

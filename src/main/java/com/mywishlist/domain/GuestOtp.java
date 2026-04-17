@@ -2,9 +2,11 @@ package com.mywishlist.domain;
 
 import java.time.Instant;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document("guest_otps")
+@CompoundIndex(name = "guest_otp_phone_expires_idx", def = "{'phone': 1, 'expiresAt': -1}")
 public class GuestOtp {
     @Id
     private String id;

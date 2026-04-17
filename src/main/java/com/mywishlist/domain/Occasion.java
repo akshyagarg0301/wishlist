@@ -2,9 +2,12 @@ package com.mywishlist.domain;
 
 import java.time.LocalDate;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document("occasions")
+@CompoundIndex(name = "occasion_recipient_deleted_idx", def = "{'recipientId': 1, 'deleted': 1}")
 public class Occasion {
     @Id
     private String id;
@@ -15,7 +18,11 @@ public class Occasion {
 
     private String imageUrl;
 
+    @Indexed
     private String recipientId;
+
+    @Indexed
+    private boolean deleted;
 
     private boolean surpriseMode = true;
 
@@ -67,6 +74,10 @@ public class Occasion {
         return revealAt;
     }
 
+    public boolean isDeleted() {
+        return deleted;
+    }
+
     public void setTitle(String title) {
         this.title = title;
     }
@@ -93,5 +104,9 @@ public class Occasion {
 
     public void setRevealAt(LocalDate revealAt) {
         this.revealAt = revealAt;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 }

@@ -2,9 +2,16 @@ package com.mywishlist.domain;
 
 import java.time.Instant;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document("gift_items")
+@CompoundIndexes({
+        @CompoundIndex(name = "gift_recipient_deleted_idx", def = "{'recipientId': 1, 'deleted': 1}"),
+        @CompoundIndex(name = "gift_occasion_deleted_idx", def = "{'occasionId': 1, 'deleted': 1}")
+})
 public class GiftItem {
     @Id
     private String id;
@@ -22,6 +29,9 @@ public class GiftItem {
     private String recipientId;
 
     private String occasionId;
+
+    @Indexed
+    private boolean deleted;
 
     private String purchasedById;
 
@@ -85,6 +95,10 @@ public class GiftItem {
         return purchasedById;
     }
 
+    public boolean isDeleted() {
+        return deleted;
+    }
+
     public String getReservedByName() {
         return reservedByName;
     }
@@ -127,6 +141,10 @@ public class GiftItem {
 
     public void setOccasionId(String occasionId) {
         this.occasionId = occasionId;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
     }
 
     public void markReserved(String name, String email, Instant reservedAt) {

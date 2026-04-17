@@ -1,5 +1,6 @@
 package com.mywishlist.service;
 
+import com.mywishlist.domain.GiftItem;
 import com.mywishlist.domain.Occasion;
 import com.mywishlist.repository.GiftItemRepository;
 import com.mywishlist.repository.OccasionRepository;
@@ -10,28 +11,25 @@ import org.springframework.stereotype.Service;
 @Service
 public class OccasionService {
     private final OccasionRepository occasionRepository;
-    private final UserService userService;
     private final GiftItemRepository giftItemRepository;
 
-    public OccasionService(OccasionRepository occasionRepository, UserService userService, GiftItemRepository giftItemRepository) {
+    public OccasionService(OccasionRepository occasionRepository, GiftItemRepository giftItemRepository) {
         this.occasionRepository = occasionRepository;
-        this.userService = userService;
         this.giftItemRepository = giftItemRepository;
     }
 
     public Occasion create(String recipientId, String title, LocalDate eventDate, String imageUrl, boolean surpriseMode) {
-        userService.get(recipientId);
         LocalDate revealAt = eventDate != null ? eventDate.plusDays(1) : null;
         Occasion occasion = new Occasion(title, eventDate, imageUrl, recipientId, surpriseMode, revealAt);
         return occasionRepository.save(occasion);
     }
 
     public List<Occasion> listForRecipient(String recipientId) {
-        return occasionRepository.findByRecipientId(recipientId);
+        return occasionRepository.findByRecipientIdAndDeletedFalse(recipientId);
     }
 
     public Occasion get(String id) {
-        return occasionRepository.findById(id)
+        return occasionRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new NotFoundException("Occasion not found"));
     }
 
@@ -40,12 +38,18 @@ public class OccasionService {
         if (!occasion.getRecipientId().equals(recipientId)) {
             throw new NotFoundException("Occasion not found");
         }
-        boolean hasPurchased = giftItemRepository.findByOccasionId(id).stream()
+        List<GiftItem> gifts = giftItemRepository.findByOccasionIdAndDeletedFalse(id);
+        boolean hasPurchased = gifts.stream()
                 .anyMatch(item -> item.getStatus() == com.mywishlist.domain.GiftStatus.PURCHASED);
         if (hasPurchased) {
             throw new IllegalStateException("Occasion has purchased gifts and cannot be deleted");
         }
-        occasionRepository.delete(occasion);
+        gifts.forEach(gift -> gift.setDeleted(true));
+        if (!gifts.isEmpty()) {
+            giftItemRepository.saveAll(gifts);
+        }
+        occasion.setDeleted(true);
+        occasionRepository.save(occasion);
     }
 
     public Occasion reveal(String id) {
