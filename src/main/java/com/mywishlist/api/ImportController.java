@@ -20,7 +20,7 @@ public class ImportController {
 
     @PostMapping("/preview")
     public ImportPreviewResponse preview(@Valid @RequestBody ImportPreviewRequest request) {
-        ProductImportService.ImportedProduct product = productImportService.previewAmazonProduct(request.url());
+        ProductImportService.ImportedProduct product = productImportService.previewProduct(request.url());
         return new ImportPreviewResponse(
                 product.source(),
                 product.name(),

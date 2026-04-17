@@ -6,7 +6,7 @@ import java.time.Instant;
 
 public class GiftDtos {
     public record CreateGiftItemRequest(
-            @NotBlank @Size(max = 150) String name,
+            @Size(max = 150) String name,
             @Size(max = 1000) String description,
             String imageUrl,
             String purchaseLink,

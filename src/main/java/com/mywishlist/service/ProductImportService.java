@@ -16,7 +16,17 @@ public class ProductImportService {
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 "
                     + "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-    public ImportedProduct previewAmazonProduct(String rawUrl) {
+    public boolean supports(String rawUrl) {
+        try {
+            String normalizedUrl = normalizeAndValidateUrl(rawUrl);
+            URI uri = new URI(normalizedUrl);
+            return uri.getHost() != null && isSupportedProductHost(uri.getHost());
+        } catch (IllegalArgumentException | URISyntaxException ex) {
+            return false;
+        }
+    }
+
+    public ImportedProduct previewProduct(String rawUrl) {
         String normalizedUrl = normalizeAndValidateUrl(rawUrl);
         Document document = fetchDocument(normalizedUrl);
 
@@ -27,7 +37,7 @@ public class ProductImportService {
                 "meta[property=og:title]"
         ));
         if (title.isBlank()) {
-            throw new IllegalStateException("This link does not look like a supported Amazon product page.");
+            throw new IllegalStateException("This link does not look like a supported product page.");
         }
 
         String imageUrl = firstAttr(document, List.of(
@@ -89,8 +99,8 @@ public class ProductImportService {
         try {
             URI uri = new URI(value);
             String host = uri.getHost();
-            if (host == null || !isSupportedAmazonHost(host)) {
-                throw new IllegalArgumentException("Only Amazon product links are supported.");
+            if (host == null || !isSupportedProductHost(host)) {
+                throw new IllegalArgumentException("This product link is not supported yet.");
             }
             return uri.toString();
         } catch (URISyntaxException ex) {
@@ -98,7 +108,7 @@ public class ProductImportService {
         }
     }
 
-    private boolean isSupportedAmazonHost(String host) {
+    private boolean isSupportedProductHost(String host) {
         String normalizedHost = host.toLowerCase();
         return normalizedHost.equals("amzn.to")
                 || normalizedHost.startsWith("amzn.")

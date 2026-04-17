@@ -95,4 +95,12 @@ export const api = {
     request(`/api/occasions/${occasionId}/reveal`, { method: 'POST' }),
   hideOccasion: (occasionId) =>
     request(`/api/occasions/${occasionId}/hide`, { method: 'POST' }),
+
+  // Imports
+  previewImport: (url) =>
+    request('/api/imports/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    }),
 };

@@ -114,7 +114,7 @@ async function loadOccasions() {
 async function loadProductFromLink() {
   const url = sourceUrlInput.value.trim();
   if (!url) {
-    setResult("Amazon product link is required.", true);
+    setResult("Product link is required.", true);
     return;
   }
 

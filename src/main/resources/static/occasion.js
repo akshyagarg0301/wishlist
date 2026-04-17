@@ -37,6 +37,7 @@ let guestEmail = "";
 let googlePromptShown = false;
 let ownerGiftItems = [];
 let guestGiftItems = [];
+let giftPreviewInFlight = false;
 
 function showToast(message, type = "success") {
   if (!toastContainer) return;
@@ -197,6 +198,49 @@ function resetGiftForm() {
   }
 }
 
+async function previewProductFromLink(url) {
+  return request("/api/imports/preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+}
+
+function isSupportedProductLink(value) {
+  const normalized = (value || "").toLowerCase();
+  return normalized.includes("amazon.") || normalized.includes("amzn.to");
+}
+
+async function autofillGiftFromLink() {
+  const purchaseLink = giftLink?.value.trim() || "";
+  setFieldError(giftLink, false);
+  if (!purchaseLink) {
+    return;
+  }
+  if (giftPreviewInFlight) {
+    return;
+  }
+  giftPreviewInFlight = true;
+  try {
+    const product = await previewProductFromLink(purchaseLink);
+    if (giftName && !giftName.value.trim()) {
+      giftName.value = product.name || "";
+    }
+    if (giftDescription && !giftDescription.value.trim()) {
+      giftDescription.value = product.description || "";
+    }
+    if (giftImage && !giftImage.value.trim()) {
+      giftImage.value = product.imageUrl || "";
+    }
+    if (giftLink && product.purchaseLink) {
+      giftLink.value = product.purchaseLink;
+    }
+  } catch (err) {
+  } finally {
+    giftPreviewInFlight = false;
+  }
+}
+
 ownerGiftList?.addEventListener("click", (event) => {
   const deleteBtn = event.target.closest("[data-action='delete-gift']");
   if (!deleteBtn) return;
@@ -314,13 +358,7 @@ createGiftBtn?.addEventListener("click", async () => {
   const description = giftDescription.value.trim();
   const imageUrl = giftImage.value.trim();
   const purchaseLink = giftLink.value.trim();
-  setFieldError(giftName, false);
   setFieldError(giftLink, false);
-  if (!name) {
-    setFieldError(giftName, true);
-    showToast("Gift name required.", "error");
-    return;
-  }
   if (!purchaseLink) {
     setFieldError(giftLink, true);
     showToast("Purchase link required.", "error");
@@ -345,6 +383,30 @@ createGiftBtn?.addEventListener("click", async () => {
   } catch (err) {
     showToast(err.message, "error");
   }
+});
+
+giftLink?.addEventListener("blur", () => {
+  const value = giftLink.value.trim();
+  if (!isSupportedProductLink(value)) {
+    return;
+  }
+  if (giftName?.value.trim() || giftDescription?.value.trim() || giftImage?.value.trim()) {
+    return;
+  }
+  autofillGiftFromLink();
+});
+
+giftLink?.addEventListener("paste", () => {
+  window.setTimeout(() => {
+    const value = giftLink.value.trim();
+    if (!isSupportedProductLink(value)) {
+      return;
+    }
+    if (giftName?.value.trim() || giftDescription?.value.trim() || giftImage?.value.trim()) {
+      return;
+    }
+    autofillGiftFromLink();
+  }, 0);
 });
 
 guestGiftList?.addEventListener("click", async (event) => {

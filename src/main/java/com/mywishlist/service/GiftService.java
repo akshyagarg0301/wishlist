@@ -25,15 +25,18 @@ public class GiftService {
     private final UserService userService;
     private final OccasionService occasionService;
     private final VendorRepository vendorRepository;
+    private final ProductImportService productImportService;
 
     public GiftService(GiftItemRepository giftItemRepository,
                        UserService userService,
                        OccasionService occasionService,
-                       VendorRepository vendorRepository) {
+                       VendorRepository vendorRepository,
+                       ProductImportService productImportService) {
         this.giftItemRepository = giftItemRepository;
         this.userService = userService;
         this.occasionService = occasionService;
         this.vendorRepository = vendorRepository;
+        this.productImportService = productImportService;
     }
 
     public GiftItem create(String recipientId, String name, String description, String imageUrl, String purchaseLink, String occasionId) {
@@ -45,8 +48,21 @@ public class GiftService {
             }
             occasionService.assertNotExpired(occasion);
         }
-        String normalizedLink = appendVendorTag(purchaseLink);
-        GiftItem item = new GiftItem(name, description, imageUrl, normalizedLink, recipientId, occasionId);
+        ProductImportService.ImportedProduct importedProduct = importProductIfSupported(purchaseLink);
+        String resolvedName = firstNonBlank(name, importedProduct == null ? null : importedProduct.name());
+        String resolvedDescription = firstNonBlank(description, importedProduct == null ? null : importedProduct.description());
+        String resolvedImageUrl = firstNonBlank(imageUrl, importedProduct == null ? null : importedProduct.imageUrl());
+        String resolvedPurchaseLink = firstNonBlank(purchaseLink, importedProduct == null ? null : importedProduct.purchaseLink());
+
+        if (resolvedName == null || resolvedName.isBlank()) {
+            throw new IllegalArgumentException("Gift name required");
+        }
+        if (resolvedPurchaseLink == null || resolvedPurchaseLink.isBlank()) {
+            throw new IllegalArgumentException("Purchase link required");
+        }
+
+        String normalizedLink = appendVendorTag(resolvedPurchaseLink);
+        GiftItem item = new GiftItem(resolvedName, resolvedDescription, resolvedImageUrl, normalizedLink, recipientId, occasionId);
         return giftItemRepository.save(item);
     }
 
@@ -137,6 +153,28 @@ public class GiftService {
                     log.warn("No tagId configured for vendor domain: {}", domain);
                     return normalized;
                 });
+    }
+
+    private ProductImportService.ImportedProduct importProductIfSupported(String purchaseLink) {
+        if (purchaseLink == null || purchaseLink.isBlank() || !productImportService.supports(purchaseLink)) {
+            return null;
+        }
+        try {
+            return productImportService.previewProduct(purchaseLink);
+        } catch (IllegalArgumentException | IllegalStateException ex) {
+            log.warn("Could not enrich gift from product link: {}", ex.getMessage());
+            return null;
+        }
+    }
+
+    private String firstNonBlank(String primary, String fallback) {
+        if (primary != null && !primary.isBlank()) {
+            return primary.trim();
+        }
+        if (fallback != null && !fallback.isBlank()) {
+            return fallback.trim();
+        }
+        return primary == null ? null : primary.trim();
     }
 
     private String extractDomain(String url) {

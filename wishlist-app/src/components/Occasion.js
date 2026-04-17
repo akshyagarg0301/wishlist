@@ -15,6 +15,7 @@ export default function Occasion() {
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [error, setError] = useState('');
+  const [giftPreviewLoading, setGiftPreviewLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -56,14 +57,41 @@ export default function Occasion() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   }
 
+  function isSupportedProductLink(value) {
+    const normalized = (value || '').toLowerCase();
+    return normalized.includes('amazon.') || normalized.includes('amzn.to');
+  }
+
+  async function handleFetchProductDetails(link = formData.purchaseLink) {
+    if (!link) {
+      return;
+    }
+    setGiftPreviewLoading(true);
+    try {
+      const product = await api.previewImport(link);
+      setFormData((current) => ({
+        ...current,
+        name: current.name || product.name || '',
+        description: current.description || product.description || '',
+        imageUrl: current.imageUrl || product.imageUrl || '',
+        purchaseLink: product.purchaseLink || current.purchaseLink || link,
+      }));
+      setError('');
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setGiftPreviewLoading(false);
+    }
+  }
+
   async function handleCreateGift(e) {
     e.preventDefault();
     if (isExpired) {
       setError('Expired occasions can only be deleted');
       return;
     }
-    if (!formData.name || !formData.purchaseLink) {
-      setError('Name and purchase link required');
+    if (!formData.purchaseLink) {
+      setError('Purchase link required');
       return;
     }
     try {
@@ -237,9 +265,7 @@ export default function Occasion() {
             <h3>Add Gift Item</h3>
             <form onSubmit={handleCreateGift}>
               <label>
-                <span className="label-text">
-                  Name<span className="required">*</span>
-                </span>
+                Name
                 <input
                   name="name"
                   type="text"
@@ -277,11 +303,36 @@ export default function Occasion() {
                   type="url"
                   value={formData.purchaseLink}
                   onChange={handleInputChange}
+                  onPaste={(e) => {
+                    const pastedLink = e.clipboardData?.getData('text') || '';
+                    window.setTimeout(() => {
+                      if (
+                        isSupportedProductLink(pastedLink) &&
+                        !formData.name &&
+                        !formData.description &&
+                        !formData.imageUrl &&
+                        !giftPreviewLoading
+                      ) {
+                        handleFetchProductDetails(pastedLink);
+                      }
+                    }, 0);
+                  }}
+                  onBlur={() => {
+                    if (
+                      isSupportedProductLink(formData.purchaseLink) &&
+                      !formData.name &&
+                      !formData.description &&
+                      !formData.imageUrl &&
+                      !giftPreviewLoading
+                    ) {
+                      handleFetchProductDetails();
+                    }
+                  }}
                   placeholder="https://store.example.com/item"
                 />
               </label>
               <button type="submit" className="primary" style={{ marginTop: 12 }}>
-                Add Gift
+                {giftPreviewLoading ? 'Fetching product...' : 'Add Gift'}
               </button>
               {error && <div className="result error">{error}</div>}
             </form>
