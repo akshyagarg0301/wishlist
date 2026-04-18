@@ -3,13 +3,14 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, resolveApiUrl } from '../services/api';
 import { LoadingOverlay, ConfirmDialog } from './FeedbackChrome';
+import defaultEventImage from '../assets/default-event.svg';
 
 
-export default function Occasion() {
+export default function Event() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [occasion, setOccasion] = useState(null);
+  const [event, setEvent] = useState(null);
   const [gifts, setGifts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
@@ -35,7 +36,7 @@ export default function Occasion() {
     imageUrl: '',
     purchaseLink: '',
   });
-  const isExpired = Boolean(occasion?.expired);
+  const isExpired = Boolean(event?.expired);
   const confirmResolverRef = useRef(null);
 
   useEffect(() => {
@@ -46,8 +47,8 @@ export default function Occasion() {
     setLoading(true);
     try {
       setError('');
-      const pageData = await api.getOccasionPage(id);
-      setOccasion(pageData.occasion);
+      const pageData = await api.getEventPage(id);
+      setEvent(pageData.event);
       setIsOwner(Boolean(pageData.owner));
       setGuestIdentity({
         verified: Boolean(pageData.guestVerified),
@@ -140,7 +141,7 @@ export default function Occasion() {
     e.preventDefault();
     setError('');
     if (isExpired) {
-      setError('Expired occasions can only be deleted');
+      setError('Expired events can only be deleted');
       return;
     }
     if (!formData.purchaseLink) {
@@ -150,7 +151,7 @@ export default function Occasion() {
     setShowGiftModal(false);
     showBusy('Adding gift...');
     try {
-      const newGift = await api.createGift({ ...formData, occasionId: id });
+      const newGift = await api.createGift({ ...formData, eventId: id });
       setGifts((current) => [...current, newGift]);
       setFormData({ name: '', description: '', imageUrl: '', purchaseLink: '' });
       setError('');
@@ -165,7 +166,7 @@ export default function Occasion() {
   async function handleDeleteGift(giftId) {
     setError('');
     if (isExpired) {
-      setError('Expired occasions can only be deleted');
+      setError('Expired events can only be deleted');
       return;
     }
     const confirmed = await confirmAction({
@@ -232,7 +233,7 @@ export default function Occasion() {
 
   function getOwnerHint(item) {
     if (item.status === 'AVAILABLE') {
-      return 'Ready to be picked by a guest.';
+      return '';
     }
     if (item.buyerName) {
       return `Buyer: ${item.buyerName}`;
@@ -250,17 +251,29 @@ export default function Occasion() {
     return '';
   }
 
-  const shareUrl = `${window.location.origin}/occasion/${id}`;
+  function truncateWords(text, wordLimit = 25) {
+    const normalized = (text || '').trim();
+    if (!normalized) {
+      return 'No description';
+    }
+    const words = normalized.split(/\s+/);
+    if (words.length <= wordLimit) {
+      return normalized;
+    }
+    return `${words.slice(0, wordLimit).join(' ')}...`;
+  }
+
+  const shareUrl = `${window.location.origin}/event/${id}`;
 
   if (loading) {
     return <div className="page"><div className="empty-state">Loading...</div></div>;
   }
 
-  if (error && !occasion) {
+  if (error && !event) {
     return (
       <div className="page">
         <div className="empty-state error">{error}</div>
-        <Link to="/" className="ghost">← Back to My Wishlists</Link>
+        <Link to="/" className="ghost">← Back to My Events</Link>
       </div>
     );
   }
@@ -274,7 +287,7 @@ export default function Occasion() {
         </div>
         <div className="nav-actions">
           <button className="ghost" onClick={() => navigate('/')}>
-            ← Back to My Wishlists
+            ← Back to My Events
           </button>
         </div>
       </nav>
@@ -282,18 +295,23 @@ export default function Occasion() {
       <section className="section detail">
         <div className="banner">
           <div className="banner-copy">
-            <span className="pill">{isExpired ? 'Expired' : 'Occasion'}</span>
-            <h2>{occasion?.title}</h2>
+            <span className="pill">{isExpired ? 'Expired' : 'Event'}</span>
+            <h2>{event?.title}</h2>
             <p>
-              {occasion?.eventDate || 'No date'}
+              {event?.eventDate || 'No date'}
               {isExpired ? ' · Expired' : ''}
             </p>
           </div>
-          {occasion?.imageUrl && (
-            <div className="banner-media">
-              <img src={resolveApiUrl(occasion.imageUrl)} alt={occasion.title} />
-            </div>
-          )}
+          <div className="banner-media">
+            <img
+              src={event?.imageUrl ? resolveApiUrl(event.imageUrl) : defaultEventImage}
+              alt={event?.title || 'Event'}
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = defaultEventImage;
+              }}
+            />
+          </div>
           {isOwner && !isExpired && (
             <button className="primary banner-action" onClick={() => setShowGiftModal(true)}>
               + New Gift
@@ -303,14 +321,14 @@ export default function Occasion() {
 
         {isOwner && isExpired && (
           <div className="empty-state" style={{ marginTop: 12 }}>
-            This occasion is expired. It can only be deleted.
+            This event is expired. It can only be deleted.
           </div>
         )}
 
         {isOwner && (
           <div className="section-head row" style={{ marginTop: 12 }}>
             <div>
-              <h3>Share this occasion</h3>
+              <h3>Share this event</h3>
               <p>Send this link to friends so they can reserve or purchase gifts.</p>
             </div>
             <div className="footer-actions">
@@ -330,7 +348,7 @@ export default function Occasion() {
         {gifts.length === 0 && (
           <div className="empty-state">
             {isOwner && isExpired
-              ? 'This occasion is expired. It can only be deleted.'
+              ? 'This event is expired. It can only be deleted.'
               : isOwner
               ? 'No gifts added yet. Click "+ New Gift" to add your first item.'
               : 'No gifts have been added yet.'}
@@ -339,6 +357,8 @@ export default function Occasion() {
         <div className="gift-list">
           {gifts.map((item) => {
             const statusMeta = getStatusMeta(item.status);
+            const ownerHint = getOwnerHint(item);
+            const guestHint = getGuestHint(item.status);
 
             return (
               <div key={item.id} className={`gift-card ${item.status === 'PURCHASED' ? 'purchased' : ''}`}>
@@ -351,12 +371,14 @@ export default function Occasion() {
                 </div>
                 <div className="gift-info">
                   <h4>{item.name}</h4>
-                  <p>{item.description || 'No description'}</p>
-                  <div className="gift-meta">
-                    <span className="hint">
-                      {isOwner ? getOwnerHint(item) : getGuestHint(item.status)}
-                    </span>
-                  </div>
+                  <p>{truncateWords(item.description, 25)}</p>
+                  {(isOwner ? ownerHint : guestHint) ? (
+                    <div className="gift-meta">
+                      <span className="hint">
+                        {isOwner ? ownerHint : guestHint}
+                      </span>
+                    </div>
+                  ) : null}
                   {isOwner && !isExpired && (
                     <div className="actions">
                       <button
@@ -483,7 +505,7 @@ export default function Occasion() {
             <button className="close" onClick={() => setShowShareModal(false)}>
               ×
             </button>
-            <h3>Share this occasion</h3>
+            <h3>Share this event</h3>
             <label>
               Share Link
               <input type="url" value={shareUrl} readOnly />

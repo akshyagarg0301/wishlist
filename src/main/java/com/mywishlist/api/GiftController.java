@@ -5,10 +5,10 @@ import com.mywishlist.api.dto.GiftDtos.GiftItemResponse;
 import com.mywishlist.api.dto.GiftDtos.GuestGiftActionRequest;
 import com.mywishlist.api.dto.GiftDtos.PublicGiftItemResponse;
 import com.mywishlist.domain.GiftItem;
-import com.mywishlist.domain.Occasion;
+import com.mywishlist.domain.Event;
 import com.mywishlist.security.CurrentUserContext;
 import com.mywishlist.service.GiftService;
-import com.mywishlist.service.OccasionService;
+import com.mywishlist.service.EventService;
 import com.mywishlist.security.JwtService;
 import com.mywishlist.service.UserService;
 import io.jsonwebtoken.Claims;
@@ -29,16 +29,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api")
 public class GiftController {
     private final GiftService giftService;
-    private final OccasionService occasionService;
+    private final EventService eventService;
     private final JwtService jwtService;
     private final UserService userService;
 
     public GiftController(GiftService giftService,
-                          OccasionService occasionService,
+                          EventService eventService,
                           JwtService jwtService,
                           UserService userService) {
         this.giftService = giftService;
-        this.occasionService = occasionService;
+        this.eventService = eventService;
         this.jwtService = jwtService;
         this.userService = userService;
     }
@@ -51,7 +51,7 @@ public class GiftController {
                 request.description(),
                 request.imageUrl(),
                 request.purchaseLink(),
-                request.occasionId()
+                request.eventId()
         );
         return toOwnerResponse(item);
     }
@@ -68,9 +68,9 @@ public class GiftController {
         giftService.delete(giftId, CurrentUserContext.getUserId());
     }
 
-    @GetMapping("/occasions/{occasionId}/gifts")
-    public List<PublicGiftItemResponse> listByOccasion(@PathVariable String occasionId) {
-        return giftService.listForOccasion(occasionId).stream()
+    @GetMapping("/events/{eventId}/gifts")
+    public List<PublicGiftItemResponse> listByEvent(@PathVariable String eventId) {
+        return giftService.listForEvent(eventId).stream()
                 .map(this::toPublicResponse)
                 .toList();
     }
@@ -100,13 +100,13 @@ public class GiftController {
     }
 
     private GiftItemResponse toOwnerResponse(GiftItem item) {
-        String occasionId = item.getOccasionId();
+        String eventId = item.getEventId();
         String purchasedById = item.getPurchasedById();
         String buyerName = null;
         String buyerPhone = null;
-        if (occasionId != null) {
-            Occasion occasion = occasionService.get(occasionId);
-            boolean reveal = occasionService.isRevealActive(occasion);
+        if (eventId != null) {
+            Event event = eventService.get(eventId);
+            boolean reveal = eventService.isRevealActive(event);
             if (reveal) {
                 if (item.getStatus().name().equals("RESERVED")) {
                     buyerName = item.getReservedByName();
@@ -125,7 +125,7 @@ public class GiftController {
                 item.getPurchaseLink(),
                 item.getStatus().name(),
                 item.getRecipientId(),
-                occasionId,
+                eventId,
                 purchasedById,
                 buyerName,
                 buyerPhone,
@@ -141,7 +141,7 @@ public class GiftController {
                 item.getImageUrl(),
                 item.getPurchaseLink(),
                 item.getStatus().name(),
-                item.getOccasionId()
+                item.getEventId()
         );
     }
 

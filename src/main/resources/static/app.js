@@ -1,4 +1,5 @@
 const API_BASE = "https://wishlist-1-6omc.onrender.com";
+const DEFAULT_EVENT_IMAGE = "/assets/default-event.svg";
 const authModal = document.getElementById("auth-modal");
 const createModal = document.getElementById("create-modal");
 
@@ -9,14 +10,14 @@ const loginResult = document.getElementById("login-result");
 const authTabs = document.querySelectorAll("[data-auth-tab]");
 const authPanels = document.querySelectorAll("[data-auth-panel]");
 
-const createOccasionBtn = document.getElementById("create-occasion");
-const occasionTitleInput = document.getElementById("occasion-title");
-const occasionDateInput = document.getElementById("occasion-date");
-const occasionImageUpload = document.getElementById("occasion-image-upload");
-const occasionImagePreview = document.getElementById("occasion-image-preview");
+const createEventBtn = document.getElementById("create-event");
+const eventTitleInput = document.getElementById("event-title");
+const eventDateInput = document.getElementById("event-date");
+const eventImageUpload = document.getElementById("event-image-upload");
+const eventImagePreview = document.getElementById("event-image-preview");
 
-const myOccasionCards = document.getElementById("my-occasion-cards");
-const myOccasionEmpty = document.getElementById("my-occasion-empty");
+const myEventCards = document.getElementById("my-event-cards");
+const myEventEmpty = document.getElementById("my-event-empty");
 
 const toastContainer = document.getElementById("toast-container");
 const progressOverlay = document.getElementById("progress-overlay");
@@ -27,8 +28,8 @@ const confirmMessage = document.getElementById("confirm-message");
 const confirmCancelBtn = document.getElementById("confirm-cancel");
 const confirmAcceptBtn = document.getElementById("confirm-accept");
 
-if (occasionDateInput) {
-  occasionDateInput.min = getTodayDateValue();
+if (eventDateInput) {
+  eventDateInput.min = getTodayDateValue();
 }
 
 function showModal(modal) {
@@ -122,8 +123,8 @@ const closeAuth = document.getElementById("close-auth");
 const closeCreate = document.getElementById("close-create");
 
 let isLoggedIn = false;
-let occasionIndex = new Map();
-let myOccasions = [];
+let eventIndex = new Map();
+let myEvents = [];
 let confirmResolver = null;
 
 function updateAuthAction() {
@@ -138,8 +139,8 @@ function updateLoggedState() {
   document.querySelectorAll("[data-logged-in]").forEach((el) => {
     el.classList.toggle("hidden", !isLoggedIn);
   });
-  if (!isLoggedIn && myOccasionCards) {
-    myOccasionCards.innerHTML = "";
+  if (!isLoggedIn && myEventCards) {
+    myEventCards.innerHTML = "";
   }
 }
 
@@ -192,66 +193,70 @@ function resolveImageUrl(path) {
   return `${API_BASE}/${path}`;
 }
 
-function renderMyOccasions(items) {
-  if (!myOccasionCards) return;
-  myOccasions = [...items];
-  occasionIndex = new Map(items.map((item) => [item.id, item]));
-  myOccasionCards.innerHTML = items
+function getEventImageUrl(path) {
+  return resolveImageUrl(path || DEFAULT_EVENT_IMAGE);
+}
+
+function renderMyEvents(items) {
+  if (!myEventCards) return;
+  myEvents = [...items];
+  eventIndex = new Map(items.map((item) => [item.id, item]));
+  myEventCards.innerHTML = items
     .map(
-      (item, index) => `
-      <article class="wishlist-card" data-occasion-id="${item.id}">
-        <div class="wishlist-cover">
-          ${item.imageUrl ? `<img src="${resolveImageUrl(item.imageUrl)}" alt="${item.title}" class="occasion-image">` : `<div class="cover-${["a", "b", "c"][index % 3]}"></div>`}
+      (item) => `
+      <article class="event-card" data-event-id="${item.id}">
+        <div class="event-cover">
+          <img src="${getEventImageUrl(item.imageUrl)}" alt="${item.title}" class="event-image" onerror="this.onerror=null;this.src='${getEventImageUrl("")}';">
         </div>
-        <div class="wishlist-body">
-          <span class="pill">${item.expired ? "Expired" : "Occasion"}</span>
+        <div class="event-body">
+          <span class="pill">${item.expired ? "Expired" : "Event"}</span>
           <h3>${item.title}</h3>
           <div class="meta">
             <span>${item.eventDate || "No date"}${item.expired ? " · Expired" : ""}</span>
           </div>
           <div class="progress"><span style="width: 0%"></span></div>
           <div class="actions">
-            <button class="ghost small danger" data-action="delete-occasion" data-occasion-id="${item.id}">Delete</button>
+            <button class="ghost small danger" data-action="delete-event" data-event-id="${item.id}">Delete</button>
           </div>
         </div>
       </article>`
     )
     .join("");
-  if (myOccasionEmpty) {
-    myOccasionEmpty.classList.toggle("hidden", items.length > 0);
+  if (myEventEmpty) {
+    myEventEmpty.classList.toggle("hidden", items.length > 0);
   }
 }
 
-function appendOccasion(item) {
-  renderMyOccasions([...myOccasions, item]);
+function appendEvent(item) {
+  renderMyEvents([...myEvents, item]);
 }
 
-function resetCreateOccasionForm() {
-  if (occasionTitleInput) {
-    occasionTitleInput.value = "";
+function resetCreateEventForm() {
+  if (eventTitleInput) {
+    eventTitleInput.value = "";
   }
-  if (occasionDateInput) {
-    occasionDateInput.value = "";
+  if (eventDateInput) {
+    eventDateInput.value = "";
   }
-  if (occasionImageUpload) {
-    occasionImageUpload.value = "";
+  if (eventImageUpload) {
+    eventImageUpload.value = "";
   }
-  if (occasionImagePreview) {
-    occasionImagePreview.innerHTML = "";
+  if (eventImagePreview) {
+    eventImagePreview.innerHTML = "";
   }
 }
 
-async function refreshMyOccasions() {
-  if (!isLoggedIn || !myOccasionCards) return;
+async function refreshMyEvents() {
+  if (!isLoggedIn || !myEventCards) return;
   try {
-    const data = await request("/api/occasions", {
+    const data = await request("/api/events", {
       headers: {},
     });
-    renderMyOccasions(data);
+    renderMyEvents(data);
   } catch (err) {
-    if (myOccasionEmpty) {
-      myOccasionEmpty.textContent = err.message;
-      myOccasionEmpty.classList.remove("hidden");
+    if (myEventEmpty) {
+      myEventEmpty.textContent = err.message;
+      myEventEmpty.classList.remove("hidden");
     }
   }
 }
@@ -265,7 +270,7 @@ async function checkAuth() {
   }
   updateAuthAction();
   updateLoggedState();
-  refreshMyOccasions();
+  refreshMyEvents();
 }
 
 authAction?.addEventListener("click", async () => {
@@ -281,8 +286,8 @@ authAction?.addEventListener("click", async () => {
     isLoggedIn = false;
     updateAuthAction();
     updateLoggedState();
-    if (myOccasionEmpty) {
-      myOccasionEmpty.textContent = "You have no wishlists yet. Create one to get started.";
+    if (myEventEmpty) {
+      myEventEmpty.textContent = "You have no events yet. Create one to get started.";
     }
     return;
   }
@@ -300,7 +305,7 @@ confirmCancelBtn?.addEventListener("click", () => resolveConfirmation(false));
 confirmAcceptBtn?.addEventListener("click", () => resolveConfirmation(true));
 
 
-// No preview needed for occasion image upload before adding
+// No preview needed for event image upload before adding
 
 [authModal, createModal, confirmModal].forEach((modal) => {
   if (!modal) return;
@@ -355,7 +360,7 @@ loginBtn.addEventListener("click", async () => {
     isLoggedIn = true;
     updateAuthAction();
     updateLoggedState();
-    await refreshMyOccasions();
+    await refreshMyEvents();
     showToast("Signed in.");
   } catch (err) {
     showModal(authModal);
@@ -395,15 +400,15 @@ createUserBtn.addEventListener("click", async () => {
   }
 });
 
-createOccasionBtn.addEventListener("click", async () => {
+createEventBtn.addEventListener("click", async () => {
   if (!isLoggedIn) {
-    showToast("Please log in to create an occasion.", "error");
+    showToast("Please log in to create an event.", "error");
     return;
   }
-  const title = document.getElementById("occasion-title").value.trim();
-  const eventDate = document.getElementById("occasion-date").value;
+  const title = document.getElementById("event-title").value.trim();
+  const eventDate = document.getElementById("event-date").value;
   if (!title) {
-    showToast("Occasion title required.", "error");
+    showToast("Event title required.", "error");
     return;
   }
   if (eventDate && eventDate < getTodayDateValue()) {
@@ -411,21 +416,26 @@ createOccasionBtn.addEventListener("click", async () => {
     return;
   }
   hideModal(createModal);
-  showProgress(occasionImageUpload && occasionImageUpload.files[0] ? "Uploading image..." : "Creating occasion...");
+  showProgress(eventImageUpload && eventImageUpload.files[0] ? "Uploading image..." : "Creating event...");
   try {
     let imageUrl = "";
-    if (occasionImageUpload && occasionImageUpload.files[0]) {
-      imageUrl = await uploadImageFile(occasionImageUpload.files[0]);
-      updateProgress("Creating occasion...");
+    if (eventImageUpload && eventImageUpload.files[0]) {
+      try {
+        imageUrl = await uploadImageFile(eventImageUpload.files[0]);
+      } catch (err) {
+        imageUrl = "";
+        showToast("Image upload failed. Using the default event image.", "error");
+      }
+      updateProgress("Creating event...");
     }
-    const data = await request("/api/occasions", {
+    const data = await request("/api/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, eventDate: eventDate || null, imageUrl }),
     });
-    appendOccasion(data);
-    resetCreateOccasionForm();
-    showToast("Occasion added successfully.");
+    appendEvent(data);
+    resetCreateEventForm();
+    showToast("Event added successfully.");
   } catch (err) {
     showModal(createModal);
     showToast(err.message, "error");
@@ -434,27 +444,27 @@ createOccasionBtn.addEventListener("click", async () => {
   }
 });
 
-myOccasionCards?.addEventListener("click", async (event) => {
-  const deleteBtn = event.target.closest("[data-action='delete-occasion']");
+myEventCards?.addEventListener("click", async (event) => {
+  const deleteBtn = event.target.closest("[data-action='delete-event']");
   if (deleteBtn) {
     event.stopPropagation();
-    const id = deleteBtn.dataset.occasionId;
+    const id = deleteBtn.dataset.eventId;
     if (!id) return;
     const confirmed = await confirmAction({
-      title: "Delete occasion",
-      message: "This wishlist will be removed permanently.",
+      title: "Delete event",
+      message: "This event will be removed permanently.",
       confirmLabel: "Delete",
     });
     if (!confirmed) return;
-    showProgress("Deleting occasion...");
-    request(`/api/occasions/${id}`, { method: "DELETE" })
-      .then(() => refreshMyOccasions())
+    showProgress("Deleting event...");
+    request(`/api/events/${id}`, { method: "DELETE" })
+      .then(() => refreshMyEvents())
       .catch((err) => showToast(err.message, "error"))
       .finally(() => hideProgress());
     return;
   }
-  const card = event.target.closest("[data-occasion-id]");
+  const card = event.target.closest("[data-event-id]");
   if (!card) return;
-  const id = card.dataset.occasionId;
-  window.location.href = `/occasion.html?occasionId=${encodeURIComponent(id)}`;
+  const id = card.dataset.eventId;
+  window.location.href = `/event.html?eventId=${encodeURIComponent(id)}`;
 });

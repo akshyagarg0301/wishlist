@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document("gift_items")
 @CompoundIndexes({
         @CompoundIndex(name = "gift_recipient_deleted_idx", def = "{'recipientId': 1, 'deleted': 1}"),
-        @CompoundIndex(name = "gift_occasion_deleted_idx", def = "{'occasionId': 1, 'deleted': 1}")
+        @CompoundIndex(name = "gift_event_deleted_idx", def = "{'eventId': 1, 'deleted': 1}")
 })
 public class GiftItem {
     @Id
@@ -28,7 +28,7 @@ public class GiftItem {
 
     private String recipientId;
 
-    private String occasionId;
+    private String eventId;
 
     @Indexed
     private boolean deleted;
@@ -50,13 +50,13 @@ public class GiftItem {
     protected GiftItem() {
     }
 
-    public GiftItem(String name, String description, String imageUrl, String purchaseLink, String recipientId, String occasionId) {
+    public GiftItem(String name, String description, String imageUrl, String purchaseLink, String recipientId, String eventId) {
         this.name = name;
         this.description = description;
         this.imageUrl = imageUrl;
         this.purchaseLink = purchaseLink;
         this.recipientId = recipientId;
-        this.occasionId = occasionId;
+        this.eventId = eventId;
     }
 
     public String getId() {
@@ -87,8 +87,8 @@ public class GiftItem {
         return recipientId;
     }
 
-    public String getOccasionId() {
-        return occasionId;
+    public String getEventId() {
+        return eventId;
     }
 
     public String getPurchasedById() {
@@ -139,8 +139,8 @@ public class GiftItem {
         this.purchaseLink = purchaseLink;
     }
 
-    public void setOccasionId(String occasionId) {
-        this.occasionId = occasionId;
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
     }
 
     public void setDeleted(boolean deleted) {

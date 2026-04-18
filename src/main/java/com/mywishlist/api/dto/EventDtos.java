@@ -7,8 +7,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
-public class OccasionDtos {
-    public record CreateOccasionRequest(
+public class EventDtos {
+    public record CreateEventRequest(
             @NotBlank @Size(max = 150) String title,
             @FutureOrPresent LocalDate eventDate,
             String imageUrl,
@@ -16,7 +16,7 @@ public class OccasionDtos {
     ) {
     }
 
-    public record OccasionResponse(
+    public record EventResponse(
             String id,
             String title,
             LocalDate eventDate,
@@ -29,27 +29,27 @@ public class OccasionDtos {
     ) {
     }
 
-    public record OccasionPageGiftResponse(
+    public record EventPageGiftResponse(
             String id,
             String name,
             String description,
             String imageUrl,
             String purchaseLink,
             String status,
-            String occasionId,
+            String eventId,
             String buyerName,
             String buyerPhone,
             Instant purchasedAt
     ) {
     }
 
-    public record OccasionPageResponse(
-            OccasionResponse occasion,
+    public record EventPageResponse(
+            EventResponse event,
             boolean owner,
             boolean guestVerified,
             String guestName,
             String guestEmail,
-            List<OccasionPageGiftResponse> gifts
+            List<EventPageGiftResponse> gifts
     ) {
     }
 }

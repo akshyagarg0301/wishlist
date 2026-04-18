@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, resolveApiUrl } from '../services/api';
 import { LoadingOverlay, ConfirmDialog } from './FeedbackChrome';
+import defaultEventImage from '../assets/default-event.svg';
 
 
 export default function Home() {
@@ -13,7 +14,7 @@ export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authTab, setAuthTab] = useState('login');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [occasions, setOccasions] = useState([]);
+  const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [busyMessage, setBusyMessage] = useState('');
@@ -36,16 +37,16 @@ export default function Home() {
 
   useEffect(() => {
     if (user) {
-      loadOccasions();
+      loadEvents();
     }
   }, [user]);
 
-  async function loadOccasions() {
+  async function loadEvents() {
     if (!user) return;
     setLoading(true);
     try {
-      const data = await api.getOccasions();
-      setOccasions(data);
+      const data = await api.getEvents();
+      setEvents(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -96,7 +97,7 @@ export default function Home() {
     showBusy('Signing in...');
     try {
       await login(formData.email, formData.password);
-      await loadOccasions();
+      await loadEvents();
     } catch (err) {
       setError(err.message);
       setAuthTab('login');
@@ -133,11 +134,11 @@ export default function Home() {
     }
   }
 
-  async function handleCreateOccasion(e) {
+  async function handleCreateEvent(e) {
     e.preventDefault();
     setError('');
     if (!formData.title) {
-      setError('Title required');
+      setError('Event title required');
       return;
     }
     if (formData.eventDate && formData.eventDate < today) {
@@ -145,15 +146,15 @@ export default function Home() {
       return;
     }
     setShowCreateModal(false);
-    showBusy('Creating occasion...');
+    showBusy('Creating event...');
     try {
-      const newOccasion = await api.createOccasion({
+      const newEvent = await api.createEvent({
         title: formData.title,
         eventDate: formData.eventDate || null,
         imageUrl: formData.imageUrl,
       });
       setFormData((current) => ({ ...current, title: '', eventDate: '', imageUrl: '' }));
-      setOccasions((current) => [...current, newOccasion]);
+      setEvents((current) => [...current, newEvent]);
     } catch (err) {
       setError(err.message);
       setShowCreateModal(true);
@@ -162,18 +163,18 @@ export default function Home() {
     }
   }
 
-  async function handleDeleteOccasion(id) {
+  async function handleDeleteEvent(id) {
     setError('');
     const confirmed = await confirmAction({
-      title: 'Delete occasion',
-      message: 'This wishlist will be removed permanently.',
+      title: 'Delete event',
+      message: 'This event will be removed permanently.',
       confirmLabel: 'Delete',
     });
     if (!confirmed) return;
-    showBusy('Deleting occasion...');
+    showBusy('Deleting event...');
     try {
-      await api.deleteOccasion(id);
-      await loadOccasions();
+      await api.deleteEvent(id);
+      await loadEvents();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -186,7 +187,7 @@ export default function Home() {
     showBusy('Signing out...');
     try {
       await logout();
-      setOccasions([]);
+      setEvents([]);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -203,7 +204,7 @@ export default function Home() {
         </div>
         <div className="nav-links">
           <a href="#home" className="nav-link active">Home</a>
-          <a href="#my" className="nav-link">My Wishlists</a>
+          <a href="#my" className="nav-link">My Events</a>
         </div>
         <div className="nav-actions">
           {isLoggedIn ? (
@@ -221,7 +222,7 @@ export default function Home() {
       <section id="home" className="hero">
         <div className="hero-copy">
           <p className="eyebrow">Every gift tells a story</p>
-          <h1>Create wishlists for every occasion.</h1>
+          <h1>Create gift plans for every event.</h1>
           <p className="lede">
             Recipients add gift ideas and share with friends. Friends mark items as
             purchased for joyful surprises.
@@ -241,12 +242,12 @@ export default function Home() {
           <div className="info-card">
             <div className="icon">🎀</div>
             <h3>Create your list</h3>
-            <p>Add items you love to receive for any occasion.</p>
+            <p>Add items you would love to receive for any event.</p>
           </div>
           <div className="info-card">
             <div className="icon">👥</div>
             <h3>Share with friends</h3>
-            <p>Your friends can browse your wishlist and see what you're hoping for.</p>
+            <p>Your friends can browse your event and see what you're hoping for.</p>
           </div>
           <div className="info-card">
             <div className="icon">❤️</div>
@@ -264,21 +265,21 @@ export default function Home() {
       <section id="my" className="section">
         <div className="section-head row">
           <div>
-            <h2>My Wishlists</h2>
-            <p>Create and manage your gift wishlists.</p>
+            <h2>My Events</h2>
+            <p>Create and manage your gift events.</p>
           </div>
           {isLoggedIn ? (
             <button className="primary" onClick={() => setShowCreateModal(true)}>
-              + New Wishlist
+              + New Event
             </button>
           ) : null}
         </div>
-        <div className="wishlist-grid">
+        <div className="event-grid">
           {!user && (
             <>
-              <article className="wishlist-card">
-                <div className="wishlist-cover cover-a"></div>
-                <div className="wishlist-body">
+              <article className="event-card">
+                <div className="event-cover cover-a"></div>
+                <div className="event-body">
                   <span className="pill">Birthday</span>
                   <h3>My 30th Birthday</h3>
                   <div className="meta">
@@ -290,11 +291,11 @@ export default function Home() {
                   </div>
                 </div>
               </article>
-              <article className="wishlist-card">
-                <div className="wishlist-cover cover-b"></div>
-                <div className="wishlist-body">
+              <article className="event-card">
+                <div className="event-cover cover-b"></div>
+                <div className="event-body">
                   <span className="pill">Christmas</span>
-                  <h3>Holiday Wishlist 2026</h3>
+                  <h3>Holiday Event 2026</h3>
                   <div className="meta">
                     <span>Dec 25, 2026</span>
                     <span>0/2 purchased</span>
@@ -309,29 +310,29 @@ export default function Home() {
           {isLoggedIn && loading && <div className="empty-state">Loading...</div>}
           {isLoggedIn &&
             !loading &&
-            occasions.length === 0 &&
-            !error && <div className="empty-state">You have no wishlists yet.</div>}
-          {isLoggedIn && occasions.length > 0 && (
+            events.length === 0 &&
+            !error && <div className="empty-state">You have no events yet.</div>}
+          {isLoggedIn && events.length > 0 && (
             <div className="grid-contents">
-              {occasions.map((item, index) => (
+              {events.map((item) => (
                 <article
                   key={item.id}
-                  className="wishlist-card"
-                  onClick={() => navigate(`/occasion/${item.id}`)}
+                  className="event-card"
+                  onClick={() => navigate(`/event/${item.id}`)}
                 >
-                  <div className="wishlist-cover">
-                    {item.imageUrl ? (
-                      <img src={resolveApiUrl(item.imageUrl)} alt={item.title} className="occasion-image" />
-                    ) : (
-                      <div
-                        className={`wishlist-cover-fill ${
-                          ['cover-a', 'cover-b', 'cover-c'][index % 3]
-                        }`}
-                      ></div>
-                    )}
+                  <div className="event-cover">
+                    <img
+                      src={item.imageUrl ? resolveApiUrl(item.imageUrl) : defaultEventImage}
+                      alt={item.title}
+                      className="event-image"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = defaultEventImage;
+                      }}
+                    />
                   </div>
-                  <div className="wishlist-body">
-                    <span className="pill">{item.expired ? 'Expired' : 'Occasion'}</span>
+                  <div className="event-body">
+                    <span className="pill">{item.expired ? 'Expired' : 'Event'}</span>
                     <h3>{item.title}</h3>
                     <div className="meta">
                       <span>
@@ -344,7 +345,7 @@ export default function Home() {
                         className="ghost small danger"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleDeleteOccasion(item.id);
+                          handleDeleteEvent(item.id);
                         }}
                       >
                         Delete
@@ -455,9 +456,9 @@ export default function Home() {
             <button className="close" onClick={() => setShowCreateModal(false)}>
               ×
             </button>
-            <h3>Create Occasion</h3>
-            <p className="hint">Add the occasion details below.</p>
-            <form onSubmit={handleCreateOccasion}>
+            <h3>Create Event</h3>
+            <p className="hint">Add the event details below.</p>
+            <form onSubmit={handleCreateEvent}>
               <label>
                 Title
                 <input
@@ -489,7 +490,7 @@ export default function Home() {
                 />
               </label>
               <button type="submit" className="primary" style={{ marginTop: 12 }}>
-                Add Occasion
+                Add Event
               </button>
               {error && <div className="result error">{error}</div>}
             </form>

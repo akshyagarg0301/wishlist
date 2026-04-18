@@ -2,7 +2,7 @@ package com.mywishlist.service;
 
 import com.mywishlist.domain.GiftItem;
 import com.mywishlist.domain.GiftStatus;
-import com.mywishlist.domain.Occasion;
+import com.mywishlist.domain.Event;
 import com.mywishlist.repository.GiftItemRepository;
 import com.mywishlist.repository.VendorRepository;
 import java.time.Instant;
@@ -23,30 +23,30 @@ public class GiftService {
     private static final Logger log = LoggerFactory.getLogger(GiftService.class);
     private final GiftItemRepository giftItemRepository;
     private final UserService userService;
-    private final OccasionService occasionService;
+    private final EventService eventService;
     private final VendorRepository vendorRepository;
     private final ProductImportService productImportService;
 
     public GiftService(GiftItemRepository giftItemRepository,
                        UserService userService,
-                       OccasionService occasionService,
+                       EventService eventService,
                        VendorRepository vendorRepository,
                        ProductImportService productImportService) {
         this.giftItemRepository = giftItemRepository;
         this.userService = userService;
-        this.occasionService = occasionService;
+        this.eventService = eventService;
         this.vendorRepository = vendorRepository;
         this.productImportService = productImportService;
     }
 
-    public GiftItem create(String recipientId, String name, String description, String imageUrl, String purchaseLink, String occasionId) {
+    public GiftItem create(String recipientId, String name, String description, String imageUrl, String purchaseLink, String eventId) {
         userService.get(recipientId);
-        if (occasionId != null) {
-            Occasion occasion = occasionService.get(occasionId);
-            if (!occasion.getRecipientId().equals(recipientId)) {
-                throw new NotFoundException("Occasion does not belong to recipient");
+        if (eventId != null) {
+            Event event = eventService.get(eventId);
+            if (!event.getRecipientId().equals(recipientId)) {
+                throw new NotFoundException("Event does not belong to recipient");
             }
-            occasionService.assertNotExpired(occasion);
+            eventService.assertNotExpired(event);
         }
         ProductImportService.ImportedProduct importedProduct = importProductIfSupported(purchaseLink);
         String resolvedName = firstNonBlank(name, importedProduct == null ? null : importedProduct.name());
@@ -62,7 +62,7 @@ public class GiftService {
         }
 
         String normalizedLink = appendVendorTag(resolvedPurchaseLink);
-        GiftItem item = new GiftItem(resolvedName, resolvedDescription, resolvedImageUrl, normalizedLink, recipientId, occasionId);
+        GiftItem item = new GiftItem(resolvedName, resolvedDescription, resolvedImageUrl, normalizedLink, recipientId, eventId);
         return giftItemRepository.save(item);
     }
 
@@ -76,9 +76,9 @@ public class GiftService {
         if (!gift.getRecipientId().equals(recipientId)) {
             throw new NotFoundException("Gift item not found");
         }
-        if (gift.getOccasionId() != null) {
-            Occasion occasion = occasionService.get(gift.getOccasionId());
-            occasionService.assertNotExpired(occasion);
+        if (gift.getEventId() != null) {
+            Event event = eventService.get(gift.getEventId());
+            eventService.assertNotExpired(event);
         }
         if (gift.getStatus() == GiftStatus.PURCHASED) {
             throw new IllegalStateException("Purchased gifts cannot be deleted");
@@ -128,9 +128,9 @@ public class GiftService {
         return giftItemRepository.save(gift);
     }
 
-    public List<GiftItem> listForOccasion(String occasionId) {
-        occasionService.get(occasionId);
-        return giftItemRepository.findByOccasionIdAndDeletedFalse(occasionId);
+    public List<GiftItem> listForEvent(String eventId) {
+        eventService.get(eventId);
+        return giftItemRepository.findByEventIdAndDeletedFalse(eventId);
     }
 
     private String appendVendorTag(String purchaseLink) {

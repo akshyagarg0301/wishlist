@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import Home from './components/Home';
-import Occasion from './components/Occasion';
+import Event from './components/Event';
 import './App.css';
 
 function App() {
@@ -11,7 +11,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/occasion/:id" element={<Occasion />} />
+          <Route path="/event/:id" element={<Event />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

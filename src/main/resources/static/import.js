@@ -1,4 +1,4 @@
-const occasionSelect = document.getElementById("import-occasion-select");
+const eventSelect = document.getElementById("import-event-select");
 const sourceUrlInput = document.getElementById("import-source-url");
 const loadLinkButton = document.getElementById("import-load-link");
 const nameInput = document.getElementById("import-name");
@@ -12,11 +12,11 @@ const titlePreview = document.getElementById("import-title-preview");
 const linkPreview = document.getElementById("import-link-preview");
 const authMessage = document.getElementById("import-auth-message");
 const saveButton = document.getElementById("import-save");
-const openOccasionButton = document.getElementById("import-open-occasion");
+const openEventButton = document.getElementById("import-open-event");
 const resultMessage = document.getElementById("import-result");
 
-let occasions = [];
-let createdOccasionId = "";
+let events = [];
+let createdEventId = "";
 
 function setResult(message, isError = false) {
   resultMessage.textContent = message;
@@ -97,31 +97,31 @@ function looksLikeProductLink(value) {
   }
 }
 
-function renderOccasions() {
-  const activeOccasions = occasions.filter((occasion) => !occasion.expired);
-  if (!activeOccasions.length) {
-    occasionSelect.innerHTML = `<option value="">No active occasions available</option>`;
-    occasionSelect.disabled = true;
+function renderEvents() {
+  const activeEvents = events.filter((event) => !event.expired);
+  if (!activeEvents.length) {
+    eventSelect.innerHTML = `<option value="">No active events available</option>`;
+    eventSelect.disabled = true;
     saveButton.disabled = true;
     return;
   }
 
-  occasionSelect.innerHTML = activeOccasions
-    .map((occasion) => `<option value="${occasion.id}">${occasion.title}</option>`)
+  eventSelect.innerHTML = activeEvents
+    .map((event) => `<option value="${event.id}">${event.title}</option>`)
     .join("");
-  occasionSelect.disabled = false;
+  eventSelect.disabled = false;
   saveButton.disabled = false;
 }
 
-async function loadOccasions() {
+async function loadEvents() {
   try {
-    occasions = await request("/api/occasions");
+    events = await request("/api/events");
     authMessage.classList.add("hidden");
-    renderOccasions();
+    renderEvents();
   } catch (err) {
     authMessage.textContent = "Sign in to Giftly first, then reopen this import page.";
     authMessage.classList.remove("hidden");
-    occasionSelect.disabled = true;
+    eventSelect.disabled = true;
     saveButton.disabled = true;
   }
 }
@@ -146,17 +146,17 @@ async function loadProductFromLink() {
 }
 
 saveButton.addEventListener("click", async () => {
-  const occasionId = occasionSelect.value;
+  const eventId = eventSelect.value;
   const payload = {
     name: nameInput.value.trim(),
     description: descriptionInput.value.trim(),
     imageUrl: imageUrlInput.value.trim(),
     purchaseLink: purchaseLinkInput.value.trim(),
-    occasionId
+    eventId
   };
 
-  if (!payload.purchaseLink || !occasionId) {
-    setResult("Purchase link and occasion are required.", true);
+  if (!payload.purchaseLink || !eventId) {
+    setResult("Purchase link and event are required.", true);
     return;
   }
 
@@ -167,8 +167,8 @@ saveButton.addEventListener("click", async () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
-    createdOccasionId = gift.occasionId || occasionId;
-    openOccasionButton.classList.remove("hidden");
+    createdEventId = gift.eventId || eventId;
+    openEventButton.classList.remove("hidden");
     setResult("Product saved successfully.");
   } catch (err) {
     setResult(err.message, true);
@@ -203,11 +203,11 @@ loadLinkButton.addEventListener("click", () => {
   loadProductFromLink();
 });
 
-openOccasionButton.addEventListener("click", () => {
-  if (!createdOccasionId) {
+openEventButton.addEventListener("click", () => {
+  if (!createdEventId) {
     return;
   }
-  window.location.href = `/occasion.html?occasionId=${encodeURIComponent(createdOccasionId)}`;
+  window.location.href = `/event.html?eventId=${encodeURIComponent(createdEventId)}`;
 });
 
 const initialProduct = readProductFromUrl();
@@ -215,4 +215,4 @@ renderProductPreview(initialProduct);
 if (initialProduct.purchaseLink && !initialProduct.name && !initialProduct.imageUrl && !initialProduct.description) {
   loadProductFromLink();
 }
-loadOccasions();
+loadEvents();

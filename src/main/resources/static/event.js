@@ -1,10 +1,11 @@
 const API_BASE = "https://wishlist-1-6omc.onrender.com";
+const DEFAULT_EVENT_IMAGE = "/assets/default-event.svg";
 const toastContainer = document.getElementById("toast-container");
-const occasionPillEl = document.getElementById("occasion-pill");
-const titleEl = document.getElementById("occasion-title");
-const dateEl = document.getElementById("occasion-date");
-const occasionBannerMedia = document.getElementById("occasion-banner-media");
-const occasionBannerImage = document.getElementById("occasion-banner-image");
+const eventPillEl = document.getElementById("event-pill");
+const titleEl = document.getElementById("event-title");
+const dateEl = document.getElementById("event-date");
+const eventBannerMedia = document.getElementById("event-banner-media");
+const eventBannerImage = document.getElementById("event-banner-image");
 const expiredNoteEl = document.getElementById("expired-note");
 const newGiftBtn = document.getElementById("new-gift-btn");
 const ownerControls = document.getElementById("owner-controls");
@@ -16,7 +17,7 @@ const closeGuestAuth = document.getElementById("close-guest-auth");
 const googleSignInEl = document.getElementById("google-signin");
 const giftModal = document.getElementById("gift-modal");
 const shareSection = document.getElementById("share-section");
-const shareLinkInput = document.getElementById("occasion-share-link");
+const shareLinkInput = document.getElementById("event-share-link");
 const copyShareBtn = document.getElementById("copy-share-link");
 const shareWhatsappBtn = document.getElementById("share-whatsapp");
 const closeGift = document.getElementById("close-gift");
@@ -38,10 +39,10 @@ const confirmMessage = document.getElementById("confirm-message");
 const confirmCancelBtn = document.getElementById("confirm-cancel");
 const confirmAcceptBtn = document.getElementById("confirm-accept");
 
-let occasionId = "";
+let eventId = "";
 let isOwner = false;
 let guestVerified = false;
-let occasionData = null;
+let eventData = null;
 let guestName = "";
 let guestEmail = "";
 let googlePromptShown = false;
@@ -166,7 +167,7 @@ function renderStatusBadge(status) {
 
 function getOwnerGiftHint(item) {
   if (item.status === "AVAILABLE") {
-    return "Ready to be picked by a guest.";
+    return "";
   }
   if (item.buyerName) {
     return `Buyer: ${item.buyerName}`;
@@ -184,13 +185,25 @@ function getGuestGiftHint(status) {
   return "";
 }
 
+function truncateWords(text, wordLimit = 25) {
+  const normalized = (text || "").trim();
+  if (!normalized) {
+    return "No description";
+  }
+  const words = normalized.split(/\s+/);
+  if (words.length <= wordLimit) {
+    return normalized;
+  }
+  return `${words.slice(0, wordLimit).join(" ")}...`;
+}
+
 function renderOwnerGifts(items) {
   if (!ownerGiftList || !ownerGiftEmpty) return;
   ownerGiftItems = [...items];
   if (!items.length) {
     ownerGiftList.innerHTML = "";
-    ownerGiftEmpty.textContent = isOccasionExpired()
-      ? "This occasion is expired. It can only be deleted."
+    ownerGiftEmpty.textContent = isEventExpired()
+      ? "This event is expired. It can only be deleted."
       : "No gifts added yet. Click \"+ New Gift\" to add your first item.";
     ownerGiftEmpty.classList.remove("hidden");
     return;
@@ -199,10 +212,8 @@ function renderOwnerGifts(items) {
   ownerGiftList.innerHTML = items
     .map((item) => {
       const link = ensureAbsoluteUrl(item.purchaseLink);
-      
-      // Limit description to 100 words
-      const description = item.description || "No description";
-      const limitedDescription = description.split(' ').slice(0, 100).join(' ') + (description.split(' ').length > 100 ? '...' : '');
+      const limitedDescription = truncateWords(item.description, 25);
+      const ownerHint = getOwnerGiftHint(item);
       
       return `
       <a class="gift-card-link" href="${link || "#"}" target="_blank" rel="noopener noreferrer" ${link ? "" : "aria-disabled=\"true\""}>
@@ -211,11 +222,9 @@ function renderOwnerGifts(items) {
           <div class="gift-info">
             <h4>${item.name}</h4>
             <p>${limitedDescription}</p>
-            <div class="gift-meta">
-              <span class="hint">${getOwnerGiftHint(item)}</span>
-            </div>
+            ${ownerHint ? `<div class="gift-meta"><span class="hint">${ownerHint}</span></div>` : ""}
             ${
-              isOccasionExpired()
+              isEventExpired()
                 ? ""
                 : `<div class="actions">
                      <button class="ghost small danger" data-action="delete-gift" data-gift-id="${item.id}">Delete</button>
@@ -251,9 +260,7 @@ function renderGuestGifts(items) {
   guestGiftList.innerHTML = items
     .map(
       (item) => {
-        // Limit description to 100 words
-        const description = item.description || "No description";
-        const limitedDescription = description.split(' ').slice(0, 100).join(' ') + (description.split(' ').length > 100 ? '...' : '');
+        const limitedDescription = truncateWords(item.description, 25);
         
         return `
       <div class="gift-card ${item.status === "PURCHASED" ? "purchased" : ""}" data-link="${ensureAbsoluteUrl(item.purchaseLink) || ""}" data-status="${item.status}">
@@ -297,6 +304,10 @@ function resolveImageUrl(url) {
     return `${API_BASE}${url}`;
   }
   return `${API_BASE}/${url}`;
+}
+
+function getEventImageUrl(url) {
+  return resolveImageUrl(url || DEFAULT_EVENT_IMAGE);
 }
 
 function appendOwnerGift(item) {
@@ -444,8 +455,8 @@ ownerGiftList?.addEventListener("click", async (event) => {
   const deleteBtn = event.target.closest("[data-action='delete-gift']");
   if (!deleteBtn) return;
   event.preventDefault();
-  if (isOccasionExpired()) {
-    showToast("Expired occasions can only be deleted", "error");
+  if (isEventExpired()) {
+    showToast("Expired events can only be deleted", "error");
     return;
   }
   const giftId = deleteBtn.dataset.giftId;
@@ -458,7 +469,7 @@ ownerGiftList?.addEventListener("click", async (event) => {
   if (!confirmed) return;
   showProgress("Deleting gift...");
   request(`/api/gifts/${giftId}`, { method: "DELETE" })
-    .then(() => loadOccasionPage())
+    .then(() => loadEventPage())
     .catch((err) => showToast(err.message, "error"))
     .finally(() => hideProgress());
 });
@@ -476,60 +487,59 @@ function hideGuestAuth() {
 }
 
 function isRevealActive() {
-  if (!occasionData) return false;
-  if (!occasionData.surpriseMode) return true;
-  if (occasionData.revealUnlocked) return true;
-  if (occasionData.revealAt) {
-    const revealDate = new Date(occasionData.revealAt);
+  if (!eventData) return false;
+  if (!eventData.surpriseMode) return true;
+  if (eventData.revealUnlocked) return true;
+  if (eventData.revealAt) {
+    const revealDate = new Date(eventData.revealAt);
     const today = new Date();
     return revealDate <= today;
   }
   return false;
 }
 
-function isOccasionExpired() {
-  return Boolean(occasionData?.expired);
+function isEventExpired() {
+  return Boolean(eventData?.expired);
 }
 
-function applyOccasionPage(pageData) {
-  occasionData = pageData.occasion;
+function applyEventPage(pageData) {
+  eventData = pageData.event;
   isOwner = Boolean(pageData.owner);
   guestVerified = Boolean(pageData.guestVerified);
   guestName = pageData.guestName || "";
   guestEmail = pageData.guestEmail || "";
 
-  if (occasionPillEl) {
-    occasionPillEl.textContent = occasionData.expired ? "Expired" : "Occasion";
+  if (eventPillEl) {
+    eventPillEl.textContent = eventData.expired ? "Expired" : "Event";
   }
-  titleEl.textContent = occasionData.title;
-  dateEl.textContent = `${occasionData.eventDate || "No date"}${occasionData.expired ? " · Expired" : ""}`;
-  if (occasionBannerMedia && occasionBannerImage) {
-    if (occasionData.imageUrl) {
-      occasionBannerImage.src = resolveImageUrl(occasionData.imageUrl);
-      occasionBannerImage.alt = occasionData.title;
-      occasionBannerMedia.classList.remove("hidden");
-    } else {
-      occasionBannerImage.removeAttribute("src");
-      occasionBannerMedia.classList.add("hidden");
-    }
+  titleEl.textContent = eventData.title;
+  dateEl.textContent = `${eventData.eventDate || "No date"}${eventData.expired ? " · Expired" : ""}`;
+  if (eventBannerMedia && eventBannerImage) {
+    eventBannerImage.onerror = () => {
+      eventBannerImage.onerror = null;
+      eventBannerImage.src = getEventImageUrl("");
+    };
+    eventBannerImage.src = getEventImageUrl(eventData.imageUrl);
+    eventBannerImage.alt = eventData.title || "Event";
+    eventBannerMedia.classList.remove("hidden");
   }
-  const canEditOccasion = isOwner && !occasionData?.expired;
-  expiredNoteEl?.classList.toggle("hidden", !occasionData.expired || !isOwner);
-  ownerControls.classList.toggle("hidden", !canEditOccasion);
-  newGiftBtn.classList.toggle("hidden", !canEditOccasion);
+  const canEditEvent = isOwner && !eventData?.expired;
+  expiredNoteEl?.classList.toggle("hidden", !eventData.expired || !isOwner);
+  ownerControls.classList.toggle("hidden", !canEditEvent);
+  newGiftBtn.classList.toggle("hidden", !canEditEvent);
   ownerGiftList.classList.toggle("hidden", !isOwner);
   ownerGiftEmpty.classList.toggle("hidden", !isOwner);
   shareSection?.classList.toggle("hidden", !isOwner);
   guestGiftList.classList.toggle("hidden", isOwner);
   guestGiftEmpty.classList.toggle("hidden", isOwner);
-  if (occasionData.surpriseMode) {
+  if (eventData.surpriseMode) {
     revealHint.textContent = "Surprise mode is ON. Buyers stay hidden until reveal.";
     revealBuyersBtn.classList.remove("hidden");
   } else {
     revealHint.textContent = "Surprise mode is OFF. Buyers show immediately.";
     revealBuyersBtn.classList.add("hidden");
   }
-  if (occasionData.surpriseMode) {
+  if (eventData.surpriseMode) {
     const icon = "<span class=\"icon-eye\" aria-hidden=\"true\"></span>";
     revealBuyersBtn.innerHTML = isRevealActive()
       ? `Hide buyers ${icon}`
@@ -543,14 +553,14 @@ function applyOccasionPage(pageData) {
   }
 }
 
-async function loadOccasionPage() {
-  const pageData = await request(`/api/occasions/${occasionId}/page`);
-  applyOccasionPage(pageData);
+async function loadEventPage() {
+  const pageData = await request(`/api/events/${eventId}/page`);
+  applyEventPage(pageData);
 }
 
 newGiftBtn?.addEventListener("click", () => {
-  if (isOccasionExpired()) {
-    showToast("Expired occasions can only be deleted", "error");
+  if (isEventExpired()) {
+    showToast("Expired events can only be deleted", "error");
     return;
   }
   showModal(giftModal);
@@ -560,8 +570,8 @@ newGiftBtn?.addEventListener("click", () => {
 closeGift?.addEventListener("click", () => hideModal(giftModal));
 
 createGiftBtn?.addEventListener("click", async () => {
-  if (isOccasionExpired()) {
-    showToast("Expired occasions can only be deleted", "error");
+  if (isEventExpired()) {
+    showToast("Expired events can only be deleted", "error");
     return;
   }
   const name = giftName.value.trim();
@@ -589,7 +599,7 @@ createGiftBtn?.addEventListener("click", async () => {
         description,
         imageUrl,
         purchaseLink,
-        occasionId,
+        eventId,
       }),
     });
     appendOwnerGift(data);
@@ -656,7 +666,7 @@ guestGiftList?.addEventListener("click", async (event) => {
       });
       showToast("Gift marked purchased.");
     }
-    await loadOccasionPage();
+    await loadEventPage();
   } catch (err) {
     showToast(err.message, "error");
   } finally {
@@ -677,22 +687,22 @@ guestGiftList?.addEventListener("click", (event) => {
 
 revealBuyersBtn?.addEventListener("click", async () => {
   try {
-    if (!occasionData?.surpriseMode) {
+    if (!eventData?.surpriseMode) {
       return;
     }
-    if (isOccasionExpired()) {
-      showToast("Expired occasions can only be deleted", "error");
+    if (isEventExpired()) {
+      showToast("Expired events can only be deleted", "error");
       return;
     }
-    if (isRevealActive() && !occasionData.revealUnlocked) {
+    if (isRevealActive() && !eventData.revealUnlocked) {
       showToast("Auto reveal is active. Buyers cannot be hidden now.", "error");
       return;
     }
     const endpoint = isRevealActive() ? "hide" : "reveal";
     showProgress(endpoint === "reveal" ? "Revealing buyers..." : "Hiding buyers...");
-    await request(`/api/occasions/${occasionId}/${endpoint}`, { method: "POST" });
+    await request(`/api/events/${eventId}/${endpoint}`, { method: "POST" });
     showToast(endpoint === "reveal" ? "Buyers revealed." : "Buyers hidden.");
-    await loadOccasionPage();
+    await loadEventPage();
   } catch (err) {
     showToast(err.message, "error");
   } finally {
@@ -702,17 +712,17 @@ revealBuyersBtn?.addEventListener("click", async () => {
 
 async function init() {
   const params = new URLSearchParams(window.location.search);
-  occasionId = params.get("occasionId") || "";
-  if (!occasionId) {
-    showToast("Missing occasion.", "error");
+  eventId = params.get("eventId") || "";
+  if (!eventId) {
+    showToast("Missing event.", "error");
     return;
   }
   try {
-    const shareUrl = `${window.location.origin}/occasion.html?occasionId=${encodeURIComponent(occasionId)}`;
+    const shareUrl = `${window.location.origin}/event.html?eventId=${encodeURIComponent(eventId)}`;
     if (shareLinkInput) {
       shareLinkInput.value = shareUrl;
     }
-    await loadOccasionPage();
+    await loadEventPage();
     initGoogleSignIn();
   } catch (err) {
     showToast(err.message, "error");
@@ -771,7 +781,7 @@ copyShareBtn?.addEventListener("click", async () => {
 
 shareWhatsappBtn?.addEventListener("click", () => {
   if (!shareLinkInput) return;
-  const text = `Here’s the gift list for our occasion. You can reserve or purchase a gift here: ${shareLinkInput.value}`;
+  const text = `Here is the gift list for our event. You can reserve or purchase a gift here: ${shareLinkInput.value}`;
   const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
   window.open(url, "_blank", "noopener,noreferrer");
 });

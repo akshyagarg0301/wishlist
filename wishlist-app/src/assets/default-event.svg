@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-labelledby="title desc">
+  <title id="title">Default event illustration</title>
+  <desc id="desc">A gift box with festive decorations on a soft background.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fff7ef" />
+      <stop offset="100%" stop-color="#f4d8c8" />
+    </linearGradient>
+    <linearGradient id="box" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f4c87e" />
+      <stop offset="100%" stop-color="#df985d" />
+    </linearGradient>
+    <linearGradient id="lid" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8dba3" />
+      <stop offset="100%" stop-color="#e8b170" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="420" rx="36" fill="url(#bg)" />
+  <circle cx="116" cy="92" r="30" fill="#ffffff" opacity="0.55" />
+  <circle cx="536" cy="90" r="44" fill="#ffffff" opacity="0.45" />
+  <circle cx="500" cy="320" r="56" fill="#ffffff" opacity="0.35" />
+  <path d="M88 292c42-76 110-112 204-108 76 2 136 29 180 80" fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" opacity="0.34" />
+  <g transform="translate(170 68)">
+    <ellipse cx="148" cy="278" rx="158" ry="30" fill="#c88957" opacity="0.15" />
+    <path d="M138 76c-16-38-2-70 31-70 24 0 41 22 31 51-8 24-36 36-62 37Z" fill="#d1786b" />
+    <path d="M174 76c16-38 2-70-31-70-24 0-41 22-31 51 8 24 36 36 62 37Z" fill="#e2a9b0" />
+    <path d="M22 116h252v54H22z" rx="18" fill="url(#lid)" />
+    <path d="M42 160h212v124c0 16-13 28-28 28H70c-16 0-28-12-28-28V160Z" fill="url(#box)" />
+    <rect x="146" y="78" width="20" height="234" rx="10" fill="#cc6e63" />
+    <rect x="22" y="132" width="252" height="18" rx="9" fill="#cc6e63" />
+    <path d="M110 116c-18-20-19-47-1-63 16-14 41-9 54 15 12 22 0 44-20 48Z" fill="#e9b6be" opacity="0.95" />
+    <path d="M186 116c18-20 19-47 1-63-16-14-41-9-54 15-12 22 0 44 20 48Z" fill="#d1786b" opacity="0.96" />
+  </g>
+  <g fill="#ffffff" opacity="0.88">
+    <path d="M116 136l8 20 20 8-20 8-8 20-8-20-20-8 20-8 8-20Z" />
+    <path d="M510 134l6 14 14 6-14 6-6 14-6-14-14-6 14-6 6-14Z" />
+    <path d="M484 226l4 10 10 4-10 4-4 10-4-10-10-4 10-4 4-10Z" />
+  </g>
+</svg>

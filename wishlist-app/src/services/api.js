@@ -49,24 +49,24 @@ export const api = {
       body: JSON.stringify({ name, email, password }),
     }),
 
-  // Occasions
-  getOccasions: () => request('/api/occasions'),
-  getOccasion: (occasionId) => request(`/api/occasions/${occasionId}`),
-  getOccasionPage: (occasionId) => request(`/api/occasions/${occasionId}/page`),
-  createOccasion: async (data) =>
-    request('/api/occasions', {
+  // Events
+  getEvents: () => request('/api/events'),
+  getEvent: (eventId) => request(`/api/events/${eventId}`),
+  getEventPage: (eventId) => request(`/api/events/${eventId}/page`),
+  createEvent: async (data) =>
+    request('/api/events', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     }),
-  deleteOccasion: (occasionId) =>
-    request(`/api/occasions/${occasionId}`, {
+  deleteEvent: (eventId) =>
+    request(`/api/events/${eventId}`, {
       method: 'DELETE',
     }),
 
   // Gifts
   getGifts: () => request('/api/gifts'),
-  getOccasionGifts: (occasionId) => request(`/api/occasions/${occasionId}/gifts`),
+  getEventGifts: (eventId) => request(`/api/events/${eventId}/gifts`),
   createGift: (data) =>
     request('/api/gifts', {
       method: 'POST',
@@ -104,11 +104,11 @@ export const api = {
       body: JSON.stringify({ credential }),
     }),
 
-  // Occasion actions
-  revealOccasion: (occasionId) =>
-    request(`/api/occasions/${occasionId}/reveal`, { method: 'POST' }),
-  hideOccasion: (occasionId) =>
-    request(`/api/occasions/${occasionId}/hide`, { method: 'POST' }),
+  // Event actions
+  revealEvent: (eventId) =>
+    request(`/api/events/${eventId}/reveal`, { method: 'POST' }),
+  hideEvent: (eventId) =>
+    request(`/api/events/${eventId}/hide`, { method: 'POST' }),
 
   // Imports
   previewImport: (url) =>

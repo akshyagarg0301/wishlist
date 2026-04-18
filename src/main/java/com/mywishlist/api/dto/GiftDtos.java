@@ -10,7 +10,7 @@ public class GiftDtos {
             @Size(max = 1000) String description,
             String imageUrl,
             String purchaseLink,
-            String occasionId
+            String eventId
     ) {
     }
 
@@ -22,7 +22,7 @@ public class GiftDtos {
             String purchaseLink,
             String status,
             String recipientId,
-            String occasionId,
+            String eventId,
             String purchasedById,
             String buyerName,
             String buyerPhone,
@@ -40,7 +40,7 @@ public class GiftDtos {
             String imageUrl,
             String purchaseLink,
             String status,
-            String occasionId
+            String eventId
     ) {
     }
 }

@@ -1,15 +1,15 @@
 package com.mywishlist.api;
 
-import com.mywishlist.api.dto.OccasionDtos.OccasionPageGiftResponse;
-import com.mywishlist.api.dto.OccasionDtos.OccasionPageResponse;
-import com.mywishlist.api.dto.OccasionDtos.OccasionResponse;
+import com.mywishlist.api.dto.EventDtos.EventPageGiftResponse;
+import com.mywishlist.api.dto.EventDtos.EventPageResponse;
+import com.mywishlist.api.dto.EventDtos.EventResponse;
 import com.mywishlist.domain.GiftItem;
-import com.mywishlist.domain.Occasion;
+import com.mywishlist.domain.Event;
 import com.mywishlist.domain.User;
 import com.mywishlist.security.CurrentUserContext;
 import com.mywishlist.security.JwtService;
 import com.mywishlist.service.GiftService;
-import com.mywishlist.service.OccasionService;
+import com.mywishlist.service.EventService;
 import com.mywishlist.service.UserService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
@@ -23,45 +23,45 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/occasions")
-public class OccasionPublicController {
-    private final OccasionService occasionService;
+@RequestMapping("/api/events")
+public class EventPublicController {
+    private final EventService eventService;
     private final GiftService giftService;
     private final UserService userService;
     private final JwtService jwtService;
 
-    public OccasionPublicController(OccasionService occasionService,
+    public EventPublicController(EventService eventService,
                                     GiftService giftService,
                                     UserService userService,
                                     JwtService jwtService) {
-        this.occasionService = occasionService;
+        this.eventService = eventService;
         this.giftService = giftService;
         this.userService = userService;
         this.jwtService = jwtService;
     }
 
-    @GetMapping("/{occasionId}")
-    public OccasionResponse get(@PathVariable String occasionId) {
-        Occasion occasion = occasionService.get(occasionId);
-        return toResponse(occasion);
+    @GetMapping("/{eventId}")
+    public EventResponse get(@PathVariable String eventId) {
+        Event event = eventService.get(eventId);
+        return toResponse(event);
     }
 
-    @GetMapping("/{occasionId}/page")
-    public OccasionPageResponse page(@PathVariable String occasionId, HttpServletRequest request) {
-        Occasion occasion = occasionService.get(occasionId);
+    @GetMapping("/{eventId}/page")
+    public EventPageResponse page(@PathVariable String eventId, HttpServletRequest request) {
+        Event event = eventService.get(eventId);
         String currentUserId = CurrentUserContext.getUserIdOrNull();
-        boolean isOwner = currentUserId != null && currentUserId.equals(occasion.getRecipientId());
+        boolean isOwner = currentUserId != null && currentUserId.equals(event.getRecipientId());
         GuestInfo guestInfo = resolveGuestInfo(request, currentUserId, isOwner);
 
-        List<OccasionPageGiftResponse> gifts = (isOwner
-                ? giftService.listForRecipient(occasion.getRecipientId()).stream()
-                : giftService.listForOccasion(occasionId).stream())
-                .filter(item -> occasionId.equals(item.getOccasionId()))
+        List<EventPageGiftResponse> gifts = (isOwner
+                ? giftService.listForRecipient(event.getRecipientId()).stream()
+                : giftService.listForEvent(eventId).stream())
+                .filter(item -> eventId.equals(item.getEventId()))
                 .map(item -> toPageGiftResponse(item, isOwner))
                 .toList();
 
-        return new OccasionPageResponse(
-                toResponse(occasion),
+        return new EventPageResponse(
+                toResponse(event),
                 isOwner,
                 guestInfo != null,
                 guestInfo != null ? guestInfo.name() : null,
@@ -70,38 +70,38 @@ public class OccasionPublicController {
         );
     }
 
-    @PostMapping("/{occasionId}/reveal")
-    public OccasionResponse reveal(@PathVariable String occasionId) {
-        Occasion occasion = occasionService.reveal(occasionId, CurrentUserContext.getUserId());
-        return toResponse(occasion);
+    @PostMapping("/{eventId}/reveal")
+    public EventResponse reveal(@PathVariable String eventId) {
+        Event event = eventService.reveal(eventId, CurrentUserContext.getUserId());
+        return toResponse(event);
     }
 
-    @PostMapping("/{occasionId}/hide")
-    public OccasionResponse hide(@PathVariable String occasionId) {
-        Occasion occasion = occasionService.hide(occasionId, CurrentUserContext.getUserId());
-        return toResponse(occasion);
+    @PostMapping("/{eventId}/hide")
+    public EventResponse hide(@PathVariable String eventId) {
+        Event event = eventService.hide(eventId, CurrentUserContext.getUserId());
+        return toResponse(event);
     }
 
-    private OccasionResponse toResponse(Occasion occasion) {
-        return new OccasionResponse(
-                occasion.getId(),
-                occasion.getTitle(),
-                occasion.getEventDate(),
-                occasion.getImageUrl(),
-                occasion.getRecipientId(),
-                occasion.isSurpriseMode(),
-                occasion.isRevealUnlocked(),
-                occasion.getRevealAt(),
-                occasionService.isExpired(occasion)
+    private EventResponse toResponse(Event event) {
+        return new EventResponse(
+                event.getId(),
+                event.getTitle(),
+                event.getEventDate(),
+                event.getImageUrl(),
+                event.getRecipientId(),
+                event.isSurpriseMode(),
+                event.isRevealUnlocked(),
+                event.getRevealAt(),
+                eventService.isExpired(event)
         );
     }
 
-    private OccasionPageGiftResponse toPageGiftResponse(GiftItem item, boolean isOwner) {
+    private EventPageGiftResponse toPageGiftResponse(GiftItem item, boolean isOwner) {
         String buyerName = null;
         String buyerPhone = null;
-        if (isOwner && item.getOccasionId() != null) {
-            Occasion occasion = occasionService.get(item.getOccasionId());
-            boolean reveal = occasionService.isRevealActive(occasion);
+        if (isOwner && item.getEventId() != null) {
+            Event event = eventService.get(item.getEventId());
+            boolean reveal = eventService.isRevealActive(event);
             if (reveal) {
                 if ("RESERVED".equals(item.getStatus().name())) {
                     buyerName = item.getReservedByName();
@@ -112,14 +112,14 @@ public class OccasionPublicController {
                 }
             }
         }
-        return new OccasionPageGiftResponse(
+        return new EventPageGiftResponse(
                 item.getId(),
                 item.getName(),
                 item.getDescription(),
                 item.getImageUrl(),
                 item.getPurchaseLink(),
                 item.getStatus().name(),
-                item.getOccasionId(),
+                item.getEventId(),
                 buyerName,
                 buyerPhone,
                 item.getPurchasedAt()

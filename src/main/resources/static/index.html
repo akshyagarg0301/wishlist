@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MyWishlist</title>
+    <title>My Events</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -16,7 +16,7 @@
         </div>
         <div class="nav-links">
           <a href="#home" class="nav-link active">Home</a>
-          <a href="#my" class="nav-link">My Wishlists</a>
+          <a href="#my" class="nav-link">My Events</a>
         </div>
         <div class="nav-actions">
           <button class="ghost" id="auth-action">Sign In</button>
@@ -26,7 +26,7 @@
       <section id="home" class="hero">
         <div class="hero-copy">
           <p class="eyebrow">Every gift tells a story</p>
-          <h1>Create wishlists for every occasion.</h1>
+          <h1>Create gift plans for every event.</h1>
           <p class="lede">
             Recipients add gift ideas and share with friends. Friends mark items as purchased for joyful surprises.
           </p>
@@ -46,12 +46,12 @@
           <div class="info-card">
             <div class="icon">🎀</div>
             <h3>Create your list</h3>
-            <p>Add items you love to receive for any occasion.</p>
+            <p>Add items you would love to receive for any event.</p>
           </div>
           <div class="info-card">
             <div class="icon">👥</div>
             <h3>Share with friends</h3>
-            <p>Your friends can browse your wishlist and see what you're hoping for.</p>
+            <p>Your friends can browse your event and see what you're hoping for.</p>
           </div>
           <div class="info-card">
             <div class="icon">❤️</div>
@@ -65,15 +65,15 @@
       <section id="my" class="section">
         <div class="section-head row">
           <div>
-            <h2>My Wishlists</h2>
-            <p>Create and manage your gift wishlists.</p>
+            <h2>My Events</h2>
+            <p>Create and manage your gift events.</p>
           </div>
-          <button class="primary hidden" id="open-create-2" data-logged-in>+ New Wishlist</button>
+          <button class="primary hidden" id="open-create-2" data-logged-in>+ New Event</button>
         </div>
-        <div class="wishlist-grid">
-          <article class="wishlist-card" data-logged-out>
-            <div class="wishlist-cover cover-a"></div>
-            <div class="wishlist-body">
+        <div class="event-grid">
+          <article class="event-card" data-logged-out>
+            <div class="event-cover cover-a"></div>
+            <div class="event-body">
               <span class="pill">Birthday</span>
               <h3>My 30th Birthday</h3>
               <div class="meta">
@@ -83,11 +83,11 @@
               <div class="progress"><span style="width: 33%"></span></div>
             </div>
           </article>
-          <article class="wishlist-card" data-logged-out>
-            <div class="wishlist-cover cover-b"></div>
-            <div class="wishlist-body">
+          <article class="event-card" data-logged-out>
+            <div class="event-cover cover-b"></div>
+            <div class="event-body">
               <span class="pill">Christmas</span>
-              <h3>Holiday Wishlist 2026</h3>
+              <h3>Holiday Event 2026</h3>
               <div class="meta">
                 <span>Dec 25, 2026</span>
                 <span>0/2 purchased</span>
@@ -95,9 +95,9 @@
               <div class="progress"><span style="width: 10%"></span></div>
             </div>
           </article>
-          <div id="my-occasion-cards" class="grid-contents hidden" data-logged-in></div>
-          <div id="my-occasion-empty" class="empty-state hidden" data-logged-in>
-            You have no wishlists yet. Create one to get started.
+          <div id="my-event-cards" class="grid-contents hidden" data-logged-in></div>
+          <div id="my-event-empty" class="empty-state hidden" data-logged-in>
+            You have no events yet. Create one to get started.
           </div>
         </div>
       </section>
@@ -148,22 +148,22 @@
       <div class="modal-card wide">
         <button class="close" id="close-create">×</button>
         <div>
-          <h3>Create Occasion</h3>
-          <p class="hint">Add the occasion details below.</p>
+          <h3>Create Event</h3>
+          <p class="hint">Add the event details below.</p>
           <label>
             Title
-            <input id="occasion-title" type="text" placeholder="Birthday" />
+            <input id="event-title" type="text" placeholder="Birthday" />
           </label>
           <label>
             Date
-            <input id="occasion-date" type="date" />
+            <input id="event-date" type="date" />
           </label>
            <label>
              Upload Image
-             <input id="occasion-image-upload" type="file" accept="image/*" />
-             <div id="occasion-image-preview" style="margin-top: 8px; max-width: 200px; max-height: 200px;"></div>
+             <input id="event-image-upload" type="file" accept="image/*" />
+             <div id="event-image-preview" style="margin-top: 8px; max-width: 200px; max-height: 200px;"></div>
            </label>
-          <button class="primary" id="create-occasion" style="margin-top: 12px">Add Occasion</button>
+          <button class="primary" id="create-event" style="margin-top: 12px">Add Event</button>
         </div>
       </div>
     </div>

@@ -6,9 +6,9 @@ import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document("occasions")
-@CompoundIndex(name = "occasion_recipient_deleted_idx", def = "{'recipientId': 1, 'deleted': 1}")
-public class Occasion {
+@Document("events")
+@CompoundIndex(name = "event_recipient_deleted_idx", def = "{'recipientId': 1, 'deleted': 1}")
+public class Event {
     @Id
     private String id;
 
@@ -30,10 +30,10 @@ public class Occasion {
 
     private LocalDate revealAt;
 
-    protected Occasion() {
+    protected Event() {
     }
 
-    public Occasion(String title, LocalDate eventDate, String imageUrl, String recipientId, boolean surpriseMode, LocalDate revealAt) {
+    public Event(String title, LocalDate eventDate, String imageUrl, String recipientId, boolean surpriseMode, LocalDate revealAt) {
         this.title = title;
         this.eventDate = eventDate;
         this.imageUrl = imageUrl;

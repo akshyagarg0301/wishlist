@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Occasion</title>
+    <title>Event</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="/styles.css" />
   </head>
@@ -15,31 +15,31 @@
           <span class="brand-name">Giftly</span>
         </div>
         <div class="nav-actions">
-          <a href="/index.html#my" class="ghost">← Back to My Wishlists</a>
+          <a href="/index.html#my" class="ghost">← Back to My Events</a>
         </div>
       </nav>
 
       <section class="section detail">
         <div class="banner">
           <div class="banner-copy">
-            <span class="pill" id="occasion-pill">Occasion</span>
-            <h2 id="occasion-title">Occasion</h2>
-            <p id="occasion-date">No date</p>
+            <span class="pill" id="event-pill">Event</span>
+            <h2 id="event-title">Event</h2>
+            <p id="event-date">No date</p>
           </div>
-          <div class="banner-media hidden" id="occasion-banner-media">
-            <img id="occasion-banner-image" alt="Occasion" />
+          <div class="banner-media hidden" id="event-banner-media">
+            <img id="event-banner-image" alt="Event" />
           </div>
           <button class="primary banner-action hidden" id="new-gift-btn">+ New Gift</button>
         </div>
 
         <div id="expired-note" class="empty-state hidden" style="margin-top: 12px">
-          This occasion is expired. It can only be deleted.
+          This event is expired. It can only be deleted.
         </div>
 
         <div id="share-section" class="hidden">
           <div class="section-head row" style="margin-top: 12px">
             <div>
-              <h3>Share this occasion</h3>
+              <h3>Share this event</h3>
               <p>Send this link to friends so they can reserve or purchase gifts.</p>
             </div>
           </div>
@@ -47,7 +47,7 @@
             <div>
               <label>
                 Share Link
-                <input id="occasion-share-link" type="url" readonly />
+                <input id="event-share-link" type="url" readonly />
               </label>
               <div class="footer-actions">
                 <button class="ghost" id="copy-share-link">Copy Link</button>
@@ -132,6 +132,6 @@
     <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="/occasion.js"></script>
+    <script src="/event.js"></script>
   </body>
 </html>
