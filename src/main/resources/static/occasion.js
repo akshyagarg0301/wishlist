@@ -30,6 +30,13 @@ const giftImageUpload = document.getElementById("gift-image-upload");
 const imagePreview = document.getElementById("image-preview");
 const giftLink = document.getElementById("gift-link");
 const createGiftBtn = document.getElementById("create-gift");
+const progressOverlay = document.getElementById("progress-overlay");
+const progressMessage = document.getElementById("progress-message");
+const confirmModal = document.getElementById("confirm-modal");
+const confirmTitle = document.getElementById("confirm-title");
+const confirmMessage = document.getElementById("confirm-message");
+const confirmCancelBtn = document.getElementById("confirm-cancel");
+const confirmAcceptBtn = document.getElementById("confirm-accept");
 
 let occasionId = "";
 let isOwner = false;
@@ -41,6 +48,7 @@ let googlePromptShown = false;
 let ownerGiftItems = [];
 let guestGiftItems = [];
 let giftPreviewInFlight = false;
+let confirmResolver = null;
 
 function showToast(message, type = "success") {
   if (!toastContainer) return;
@@ -67,6 +75,56 @@ function hideModal(modal) {
   modal.setAttribute("aria-hidden", "true");
 }
 
+function showProgress(message = "Working...") {
+  if (!progressOverlay) return;
+  if (progressMessage) {
+    progressMessage.textContent = message;
+  }
+  progressOverlay.classList.add("show");
+  progressOverlay.setAttribute("aria-hidden", "false");
+}
+
+function updateProgress(message) {
+  if (progressMessage) {
+    progressMessage.textContent = message;
+  }
+}
+
+function hideProgress() {
+  if (!progressOverlay) return;
+  progressOverlay.classList.remove("show");
+  progressOverlay.setAttribute("aria-hidden", "true");
+}
+
+function resolveConfirmation(value) {
+  hideModal(confirmModal);
+  if (confirmResolver) {
+    confirmResolver(value);
+    confirmResolver = null;
+  }
+}
+
+function confirmAction({
+  title = "Confirm action",
+  message = "Are you sure you want to continue?",
+  confirmLabel = "Confirm",
+} = {}) {
+  if (!confirmModal || !confirmAcceptBtn) {
+    return Promise.resolve(window.confirm(message));
+  }
+  if (confirmTitle) {
+    confirmTitle.textContent = title;
+  }
+  if (confirmMessage) {
+    confirmMessage.textContent = message;
+  }
+  confirmAcceptBtn.textContent = confirmLabel;
+  showModal(confirmModal);
+  return new Promise((resolve) => {
+    confirmResolver = resolve;
+  });
+}
+
 function setFieldError(input, hasError) {
   if (!input) return;
   input.classList.toggle("input-error", hasError);
@@ -90,6 +148,42 @@ async function request(path, options = {}) {
   return text ? JSON.parse(text) : null;
 }
 
+function getGiftStatusMeta(status) {
+  switch (status) {
+    case "PURCHASED":
+      return { label: "Purchased", className: "purchased" };
+    case "RESERVED":
+      return { label: "Reserved", className: "reserved" };
+    default:
+      return { label: "Available", className: "available" };
+  }
+}
+
+function renderStatusBadge(status) {
+  const meta = getGiftStatusMeta(status);
+  return `<span class="status-badge ${meta.className}">${meta.label}</span>`;
+}
+
+function getOwnerGiftHint(item) {
+  if (item.status === "AVAILABLE") {
+    return "Ready to be picked by a guest.";
+  }
+  if (item.buyerName) {
+    return `Buyer: ${item.buyerName}`;
+  }
+  return "Buyer hidden";
+}
+
+function getGuestGiftHint(status) {
+  if (status === "RESERVED") {
+    return "Someone has already reserved this gift.";
+  }
+  if (status === "PURCHASED") {
+    return "This gift has already been purchased.";
+  }
+  return "";
+}
+
 function renderOwnerGifts(items) {
   if (!ownerGiftList || !ownerGiftEmpty) return;
   ownerGiftItems = [...items];
@@ -104,12 +198,6 @@ function renderOwnerGifts(items) {
   ownerGiftEmpty.classList.add("hidden");
   ownerGiftList.innerHTML = items
     .map((item) => {
-      const buyerLabel =
-        item.status === "AVAILABLE"
-          ? "Available"
-          : item.buyerName
-            ? `Buyer: ${item.buyerName}`
-            : "Buyer hidden";
       const link = ensureAbsoluteUrl(item.purchaseLink);
       
       // Limit description to 100 words
@@ -123,7 +211,9 @@ function renderOwnerGifts(items) {
           <div class="gift-info">
             <h4>${item.name}</h4>
             <p>${limitedDescription}</p>
-            <div class="hint">${buyerLabel}</div>
+            <div class="gift-meta">
+              <span class="hint">${getOwnerGiftHint(item)}</span>
+            </div>
             ${
               isOccasionExpired()
                 ? ""
@@ -132,6 +222,7 @@ function renderOwnerGifts(items) {
                    </div>`
             }
           </div>
+          ${renderStatusBadge(item.status)}
         </div>
       </a>`;
     })
@@ -140,7 +231,10 @@ function renderOwnerGifts(items) {
 
 function renderGiftThumb(item) {
   if (!item.imageUrl) {
-    return `<div class="gift-thumb gold"></div>`;
+    return `
+      <div class="gift-thumb gift-thumb-fallback" aria-hidden="true">
+        <span class="gift-thumb-icon">🎁</span>
+      </div>`;
   }
   return `<div class="gift-thumb"><img src="${resolveImageUrl(item.imageUrl)}" alt="${item.name}"></div>`;
 }
@@ -173,9 +267,12 @@ function renderGuestGifts(items) {
                    <button class="ghost small" data-action="reserve" data-gift-id="${item.id}" ${!guestVerified ? "disabled" : ""}>Reserve</button>
                    <button class="primary small" data-action="purchase" data-gift-id="${item.id}" ${!guestVerified ? "disabled" : ""}>Mark Purchased</button>
                  </div>`
-              : `<div class="hint">This item is ${item.status.toLowerCase()}.</div>`
+              : `<div class="gift-meta">
+                   <span class="hint">${getGuestGiftHint(item.status)}</span>
+                 </div>`
           }
         </div>
+        ${renderStatusBadge(item.status)}
       </div>`
       }
     )
@@ -324,7 +421,26 @@ async function autofillGiftFromLink() {
   }
 }
 
-ownerGiftList?.addEventListener("click", (event) => {
+confirmCancelBtn?.addEventListener("click", () => resolveConfirmation(false));
+confirmAcceptBtn?.addEventListener("click", () => resolveConfirmation(true));
+
+[giftModal, guestAuthModal, confirmModal].forEach((modal) => {
+  if (!modal) return;
+  modal.addEventListener("click", (event) => {
+    if (event.target !== modal) return;
+    if (modal === guestAuthModal && !guestVerified) {
+      showToast("Google sign-in is required to continue.", "error");
+      return;
+    }
+    if (modal === confirmModal) {
+      resolveConfirmation(false);
+      return;
+    }
+    hideModal(modal);
+  });
+});
+
+ownerGiftList?.addEventListener("click", async (event) => {
   const deleteBtn = event.target.closest("[data-action='delete-gift']");
   if (!deleteBtn) return;
   event.preventDefault();
@@ -334,10 +450,17 @@ ownerGiftList?.addEventListener("click", (event) => {
   }
   const giftId = deleteBtn.dataset.giftId;
   if (!giftId) return;
-  if (!confirm("Delete this gift item?")) return;
+  const confirmed = await confirmAction({
+    title: "Delete gift",
+    message: "This gift item will be removed permanently.",
+    confirmLabel: "Delete",
+  });
+  if (!confirmed) return;
+  showProgress("Deleting gift...");
   request(`/api/gifts/${giftId}`, { method: "DELETE" })
     .then(() => loadOccasionPage())
-    .catch((err) => showToast(err.message, "error"));
+    .catch((err) => showToast(err.message, "error"))
+    .finally(() => hideProgress());
 });
 
 function showGuestAuth() {
@@ -436,12 +559,6 @@ newGiftBtn?.addEventListener("click", () => {
 
 closeGift?.addEventListener("click", () => hideModal(giftModal));
 
-giftModal?.addEventListener("click", (event) => {
-  if (event.target === giftModal) {
-    hideModal(giftModal);
-  }
-});
-
 createGiftBtn?.addEventListener("click", async () => {
   if (isOccasionExpired()) {
     showToast("Expired occasions can only be deleted", "error");
@@ -449,19 +566,6 @@ createGiftBtn?.addEventListener("click", async () => {
   }
   const name = giftName.value.trim();
   const description = giftDescription.value.trim();
-  
-  // Handle image upload if file is selected
-  let imageUrl = "";
-  if (giftImageUpload && giftImageUpload.files[0]) {
-    try {
-      showToast("Uploading image...", "success");
-      imageUrl = await uploadImageFile(giftImageUpload.files[0]);
-    } catch (err) {
-      showToast("Failed to upload image: " + err.message, "error");
-      return;
-    }
-  }
-  
   const purchaseLink = giftLink.value.trim();
   setFieldError(giftLink, false);
   if (!purchaseLink) {
@@ -469,8 +573,14 @@ createGiftBtn?.addEventListener("click", async () => {
     showToast("Purchase link required.", "error");
     return;
   }
-  
+  hideModal(giftModal);
+  showProgress(giftImageUpload && giftImageUpload.files[0] ? "Uploading image..." : "Adding gift...");
   try {
+    let imageUrl = "";
+    if (giftImageUpload && giftImageUpload.files[0]) {
+      imageUrl = await uploadImageFile(giftImageUpload.files[0]);
+      updateProgress("Adding gift...");
+    }
     const data = await request("/api/gifts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -484,10 +594,12 @@ createGiftBtn?.addEventListener("click", async () => {
     });
     appendOwnerGift(data);
     resetGiftForm();
-    hideModal(giftModal);
     showToast("Gift Item added successfully.");
   } catch (err) {
+    showModal(giftModal);
     showToast(err.message, "error");
+  } finally {
+    hideProgress();
   }
 });
 
@@ -526,6 +638,8 @@ guestGiftList?.addEventListener("click", async (event) => {
   const giftId = button.dataset.giftId;
   const guestNameValue = guestName;
   const guestEmailValue = guestEmail;
+  const actionMessage = action === "reserve" ? "Reserving gift..." : "Marking gift as purchased...";
+  showProgress(actionMessage);
   try {
     if (action === "reserve") {
       await request(`/api/gifts/${giftId}/reserve`, {
@@ -545,20 +659,12 @@ guestGiftList?.addEventListener("click", async (event) => {
     await loadOccasionPage();
   } catch (err) {
     showToast(err.message, "error");
+  } finally {
+    hideProgress();
   }
 });
 
 closeGuestAuth?.addEventListener("click", () => hideGuestAuth());
-
-guestAuthModal?.addEventListener("click", (event) => {
-  if (event.target === guestAuthModal) {
-    if (!guestVerified) {
-      showToast("Google sign-in is required to continue.", "error");
-      return;
-    }
-    hideGuestAuth();
-  }
-});
 
 guestGiftList?.addEventListener("click", (event) => {
   const card = event.target.closest(".gift-card");
@@ -583,11 +689,14 @@ revealBuyersBtn?.addEventListener("click", async () => {
       return;
     }
     const endpoint = isRevealActive() ? "hide" : "reveal";
+    showProgress(endpoint === "reveal" ? "Revealing buyers..." : "Hiding buyers...");
     await request(`/api/occasions/${occasionId}/${endpoint}`, { method: "POST" });
     showToast(endpoint === "reveal" ? "Buyers revealed." : "Buyers hidden.");
     await loadOccasionPage();
   } catch (err) {
     showToast(err.message, "error");
+  } finally {
+    hideProgress();
   }
 });
 
@@ -616,6 +725,7 @@ function initGoogleSignIn() {
   window.google.accounts.id.initialize({
     client_id: "1056769002846-h3rquevl5imgn20srtmp1thebmibdj3p.apps.googleusercontent.com",
     callback: async (response) => {
+      showProgress("Signing in...");
       try {
         const data = await request("/api/guests/google/verify", {
           method: "POST",
@@ -630,6 +740,8 @@ function initGoogleSignIn() {
         renderGuestGifts(guestGiftItems);
       } catch (err) {
         showToast(err.message, "error");
+      } finally {
+        hideProgress();
       }
     },
   });

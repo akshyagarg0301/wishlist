@@ -19,6 +19,13 @@ const myOccasionCards = document.getElementById("my-occasion-cards");
 const myOccasionEmpty = document.getElementById("my-occasion-empty");
 
 const toastContainer = document.getElementById("toast-container");
+const progressOverlay = document.getElementById("progress-overlay");
+const progressMessage = document.getElementById("progress-message");
+const confirmModal = document.getElementById("confirm-modal");
+const confirmTitle = document.getElementById("confirm-title");
+const confirmMessage = document.getElementById("confirm-message");
+const confirmCancelBtn = document.getElementById("confirm-cancel");
+const confirmAcceptBtn = document.getElementById("confirm-accept");
 
 if (occasionDateInput) {
   occasionDateInput.min = getTodayDateValue();
@@ -32,6 +39,56 @@ function showModal(modal) {
 function hideModal(modal) {
   modal.classList.remove("show");
   modal.setAttribute("aria-hidden", "true");
+}
+
+function showProgress(message = "Working...") {
+  if (!progressOverlay) return;
+  if (progressMessage) {
+    progressMessage.textContent = message;
+  }
+  progressOverlay.classList.add("show");
+  progressOverlay.setAttribute("aria-hidden", "false");
+}
+
+function updateProgress(message) {
+  if (progressMessage) {
+    progressMessage.textContent = message;
+  }
+}
+
+function hideProgress() {
+  if (!progressOverlay) return;
+  progressOverlay.classList.remove("show");
+  progressOverlay.setAttribute("aria-hidden", "true");
+}
+
+function resolveConfirmation(value) {
+  hideModal(confirmModal);
+  if (confirmResolver) {
+    confirmResolver(value);
+    confirmResolver = null;
+  }
+}
+
+function confirmAction({
+  title = "Confirm action",
+  message = "Are you sure you want to continue?",
+  confirmLabel = "Confirm",
+} = {}) {
+  if (!confirmModal || !confirmAcceptBtn) {
+    return Promise.resolve(window.confirm(message));
+  }
+  if (confirmTitle) {
+    confirmTitle.textContent = title;
+  }
+  if (confirmMessage) {
+    confirmMessage.textContent = message;
+  }
+  confirmAcceptBtn.textContent = confirmLabel;
+  showModal(confirmModal);
+  return new Promise((resolve) => {
+    confirmResolver = resolve;
+  });
 }
 
 function setAuthResult(el, message, isError = false) {
@@ -67,6 +124,7 @@ const closeCreate = document.getElementById("close-create");
 let isLoggedIn = false;
 let occasionIndex = new Map();
 let myOccasions = [];
+let confirmResolver = null;
 
 function updateAuthAction() {
   if (!authAction) return;
@@ -212,10 +270,13 @@ async function checkAuth() {
 
 authAction?.addEventListener("click", async () => {
   if (isLoggedIn) {
+    showProgress("Signing out...");
     try {
       await request("/api/auth/logout", { method: "POST" });
     } catch (err) {
       // ignore logout errors
+    } finally {
+      hideProgress();
     }
     isLoggedIn = false;
     updateAuthAction();
@@ -235,13 +296,20 @@ openCreate2?.addEventListener("click", () => {
 
 closeAuth?.addEventListener("click", () => hideModal(authModal));
 closeCreate?.addEventListener("click", () => hideModal(createModal));
+confirmCancelBtn?.addEventListener("click", () => resolveConfirmation(false));
+confirmAcceptBtn?.addEventListener("click", () => resolveConfirmation(true));
 
 
 // No preview needed for occasion image upload before adding
 
-[authModal, createModal].forEach((modal) => {
+[authModal, createModal, confirmModal].forEach((modal) => {
+  if (!modal) return;
   modal.addEventListener("click", (event) => {
     if (event.target === modal) {
+      if (modal === confirmModal) {
+        resolveConfirmation(false);
+        return;
+      }
       hideModal(modal);
     }
   });
@@ -276,20 +344,25 @@ loginBtn.addEventListener("click", async () => {
     setAuthResult(loginResult, "Email and password required.", true);
     return;
   }
+  hideModal(authModal);
+  showProgress("Signing in...");
   try {
-    const data = await request("/api/auth/login", {
+    await request("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
-    setAuthResult(loginResult, "Login successful.");
     isLoggedIn = true;
     updateAuthAction();
     updateLoggedState();
-    refreshMyOccasions();
-    hideModal(authModal);
+    await refreshMyOccasions();
+    showToast("Signed in.");
   } catch (err) {
+    showModal(authModal);
+    setAuthTab("login");
     setAuthResult(loginResult, err.message, true);
+  } finally {
+    hideProgress();
   }
 });
 
@@ -301,16 +374,24 @@ createUserBtn.addEventListener("click", async () => {
     setAuthResult(createUserResult, "Email and password required.", true);
     return;
   }
+  hideModal(authModal);
+  showProgress("Creating account...");
   try {
-    const data = await request("/api/users", {
+    await request("/api/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: email.split("@")[0] || "User", email, password }),
     });
-    setAuthResult(createUserResult, "Account created. You can log in now.");
+    document.getElementById("new-user-password").value = "";
+    document.getElementById("login-email").value = email;
     setAuthTab("login");
+    showToast("Account created. You can log in now.");
   } catch (err) {
+    showModal(authModal);
+    setAuthTab("signup");
     setAuthResult(createUserResult, err.message, true);
+  } finally {
+    hideProgress();
   }
 });
 
@@ -321,19 +402,6 @@ createOccasionBtn.addEventListener("click", async () => {
   }
   const title = document.getElementById("occasion-title").value.trim();
   const eventDate = document.getElementById("occasion-date").value;
-  
-  // Handle image upload if file is selected
-  let imageUrl = "";
-  if (occasionImageUpload && occasionImageUpload.files[0]) {
-    try {
-      showToast("Uploading image...", "success");
-      imageUrl = await uploadImageFile(occasionImageUpload.files[0]);
-    } catch (err) {
-      showToast("Failed to upload image: " + err.message, "error");
-      return;
-    }
-  }
-  
   if (!title) {
     showToast("Occasion title required.", "error");
     return;
@@ -342,7 +410,14 @@ createOccasionBtn.addEventListener("click", async () => {
     showToast("Event date must be today or in the future.", "error");
     return;
   }
+  hideModal(createModal);
+  showProgress(occasionImageUpload && occasionImageUpload.files[0] ? "Uploading image..." : "Creating occasion...");
   try {
+    let imageUrl = "";
+    if (occasionImageUpload && occasionImageUpload.files[0]) {
+      imageUrl = await uploadImageFile(occasionImageUpload.files[0]);
+      updateProgress("Creating occasion...");
+    }
     const data = await request("/api/occasions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -350,23 +425,32 @@ createOccasionBtn.addEventListener("click", async () => {
     });
     appendOccasion(data);
     resetCreateOccasionForm();
-    hideModal(createModal);
     showToast("Occasion added successfully.");
   } catch (err) {
+    showModal(createModal);
     showToast(err.message, "error");
+  } finally {
+    hideProgress();
   }
 });
 
-myOccasionCards?.addEventListener("click", (event) => {
+myOccasionCards?.addEventListener("click", async (event) => {
   const deleteBtn = event.target.closest("[data-action='delete-occasion']");
   if (deleteBtn) {
     event.stopPropagation();
     const id = deleteBtn.dataset.occasionId;
     if (!id) return;
-    if (!confirm("Delete this occasion?")) return;
+    const confirmed = await confirmAction({
+      title: "Delete occasion",
+      message: "This wishlist will be removed permanently.",
+      confirmLabel: "Delete",
+    });
+    if (!confirmed) return;
+    showProgress("Deleting occasion...");
     request(`/api/occasions/${id}`, { method: "DELETE" })
       .then(() => refreshMyOccasions())
-      .catch((err) => showToast(err.message, "error"));
+      .catch((err) => showToast(err.message, "error"))
+      .finally(() => hideProgress());
     return;
   }
   const card = event.target.closest("[data-occasion-id]");

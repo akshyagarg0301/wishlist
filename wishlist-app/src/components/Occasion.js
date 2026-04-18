@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, resolveApiUrl } from '../services/api';
+import { LoadingOverlay, ConfirmDialog } from './FeedbackChrome';
 
 
 export default function Occasion() {
@@ -16,6 +17,13 @@ export default function Occasion() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [error, setError] = useState('');
   const [giftPreviewLoading, setGiftPreviewLoading] = useState(false);
+  const [busyMessage, setBusyMessage] = useState('');
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: 'Confirm action',
+    message: 'Are you sure you want to continue?',
+    confirmLabel: 'Confirm',
+  });
   const [guestIdentity, setGuestIdentity] = useState({
     verified: false,
     name: '',
@@ -28,6 +36,7 @@ export default function Occasion() {
     purchaseLink: '',
   });
   const isExpired = Boolean(occasion?.expired);
+  const confirmResolverRef = useRef(null);
 
   useEffect(() => {
     loadData();
@@ -55,6 +64,34 @@ export default function Occasion() {
 
   function handleInputChange(e) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  }
+
+  function showBusy(message) {
+    setBusyMessage(message);
+  }
+
+  function hideBusy() {
+    setBusyMessage('');
+  }
+
+  function confirmAction({ title, message, confirmLabel = 'Confirm' }) {
+    return new Promise((resolve) => {
+      confirmResolverRef.current = resolve;
+      setConfirmState({
+        open: true,
+        title,
+        message,
+        confirmLabel,
+      });
+    });
+  }
+
+  function resolveConfirmation(value) {
+    if (confirmResolverRef.current) {
+      confirmResolverRef.current(value);
+      confirmResolverRef.current = null;
+    }
+    setConfirmState((current) => ({ ...current, open: false }));
   }
 
   function looksLikeProductLink(value) {
@@ -101,6 +138,7 @@ export default function Occasion() {
 
   async function handleCreateGift(e) {
     e.preventDefault();
+    setError('');
     if (isExpired) {
       setError('Expired occasions can only be deleted');
       return;
@@ -109,55 +147,107 @@ export default function Occasion() {
       setError('Purchase link required');
       return;
     }
+    setShowGiftModal(false);
+    showBusy('Adding gift...');
     try {
       const newGift = await api.createGift({ ...formData, occasionId: id });
       setGifts((current) => [...current, newGift]);
-      setShowGiftModal(false);
       setFormData({ name: '', description: '', imageUrl: '', purchaseLink: '' });
       setError('');
     } catch (err) {
       setError(err.message);
+      setShowGiftModal(true);
+    } finally {
+      hideBusy();
     }
   }
 
   async function handleDeleteGift(giftId) {
+    setError('');
     if (isExpired) {
       setError('Expired occasions can only be deleted');
       return;
     }
-    if (!confirm('Delete this gift?')) return;
+    const confirmed = await confirmAction({
+      title: 'Delete gift',
+      message: 'This gift item will be removed permanently.',
+      confirmLabel: 'Delete',
+    });
+    if (!confirmed) return;
+    showBusy('Deleting gift...');
     try {
       await api.deleteGift(giftId);
-      loadData();
+      await loadData();
     } catch (err) {
       setError(err.message);
+    } finally {
+      hideBusy();
     }
   }
 
   async function handleReserve(giftId) {
+    setError('');
     if (!guestIdentity.verified || !guestIdentity.name || !guestIdentity.email) {
       setError('Sign in is required to reserve gifts');
       return;
     }
+    showBusy('Reserving gift...');
     try {
       await api.reserveGift(giftId, guestIdentity.name, guestIdentity.email);
-      loadData();
+      await loadData();
     } catch (err) {
       setError(err.message);
+    } finally {
+      hideBusy();
     }
   }
 
   async function handlePurchase(giftId) {
+    setError('');
     if (!guestIdentity.verified || !guestIdentity.name || !guestIdentity.email) {
       setError('Sign in is required to purchase gifts');
       return;
     }
+    showBusy('Marking gift as purchased...');
     try {
       await api.purchaseGift(giftId, guestIdentity.name, guestIdentity.email);
-      loadData();
+      await loadData();
     } catch (err) {
       setError(err.message);
+    } finally {
+      hideBusy();
     }
+  }
+
+  function getStatusMeta(status) {
+    switch (status) {
+      case 'PURCHASED':
+        return { label: 'Purchased', className: 'purchased' };
+      case 'RESERVED':
+        return { label: 'Reserved', className: 'reserved' };
+      default:
+        return { label: 'Available', className: 'available' };
+    }
+  }
+
+  function getOwnerHint(item) {
+    if (item.status === 'AVAILABLE') {
+      return 'Ready to be picked by a guest.';
+    }
+    if (item.buyerName) {
+      return `Buyer: ${item.buyerName}`;
+    }
+    return 'Buyer hidden';
+  }
+
+  function getGuestHint(status) {
+    if (status === 'RESERVED') {
+      return 'Someone has already reserved this gift.';
+    }
+    if (status === 'PURCHASED') {
+      return 'This gift has already been purchased.';
+    }
+    return '';
   }
 
   const shareUrl = `${window.location.origin}/occasion/${id}`;
@@ -191,7 +281,7 @@ export default function Occasion() {
 
       <section className="section detail">
         <div className="banner">
-          <div>
+          <div className="banner-copy">
             <span className="pill">{isExpired ? 'Expired' : 'Occasion'}</span>
             <h2>{occasion?.title}</h2>
             <p>
@@ -205,7 +295,7 @@ export default function Occasion() {
             </div>
           )}
           {isOwner && !isExpired && (
-            <button className="primary" onClick={() => setShowGiftModal(true)}>
+            <button className="primary banner-action" onClick={() => setShowGiftModal(true)}>
               + New Gift
             </button>
           )}
@@ -247,53 +337,59 @@ export default function Occasion() {
           </div>
         )}
         <div className="gift-list">
-          {gifts.map((item) => (
-            <div key={item.id} className={`gift-card ${item.status === 'PURCHASED' ? 'purchased' : ''}`}>
-              <div className="gift-thumb gold">
-                {item.imageUrl ? <img src={resolveApiUrl(item.imageUrl)} alt={item.name} /> : null}
-              </div>
-              <div className="gift-info">
-                <h4>{item.name}</h4>
-                <p>{item.description || 'No description'}</p>
-                <div className="hint">
-                  {item.status === 'AVAILABLE'
-                    ? 'Available'
-                    : item.buyerName
-                    ? `Buyer: ${item.buyerName}`
-                    : 'Buyer hidden'}
+          {gifts.map((item) => {
+            const statusMeta = getStatusMeta(item.status);
+
+            return (
+              <div key={item.id} className={`gift-card ${item.status === 'PURCHASED' ? 'purchased' : ''}`}>
+                <div className={`gift-thumb ${item.imageUrl ? 'gold' : 'gift-thumb-fallback'}`} aria-hidden={!item.imageUrl}>
+                  {item.imageUrl ? (
+                    <img src={resolveApiUrl(item.imageUrl)} alt={item.name} />
+                  ) : (
+                    <span className="gift-thumb-icon">🎁</span>
+                  )}
                 </div>
-                {isOwner && !isExpired && (
-                  <div className="actions">
-                    <button
-                      className="ghost small danger"
-                      onClick={() => handleDeleteGift(item.id)}
-                    >
-                      Delete
-                    </button>
+                <div className="gift-info">
+                  <h4>{item.name}</h4>
+                  <p>{item.description || 'No description'}</p>
+                  <div className="gift-meta">
+                    <span className="hint">
+                      {isOwner ? getOwnerHint(item) : getGuestHint(item.status)}
+                    </span>
                   </div>
-                )}
-                {!isOwner && item.status === 'AVAILABLE' && (
-                  <div className="actions">
-                    <button
-                      className="ghost small"
-                      onClick={() => handleReserve(item.id)}
-                      disabled={!guestIdentity.verified}
-                    >
-                      Reserve
-                    </button>
-                    <button
-                      className="primary small"
-                      onClick={() => handlePurchase(item.id)}
-                      disabled={!guestIdentity.verified}
-                    >
-                      Mark Purchased
-                    </button>
-                  </div>
-                )}
+                  {isOwner && !isExpired && (
+                    <div className="actions">
+                      <button
+                        className="ghost small danger"
+                        onClick={() => handleDeleteGift(item.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                  {!isOwner && item.status === 'AVAILABLE' && (
+                    <div className="actions">
+                      <button
+                        className="ghost small"
+                        onClick={() => handleReserve(item.id)}
+                        disabled={!guestIdentity.verified}
+                      >
+                        Reserve
+                      </button>
+                      <button
+                        className="primary small"
+                        onClick={() => handlePurchase(item.id)}
+                        disabled={!guestIdentity.verified}
+                      >
+                        Mark Purchased
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className={`status-badge ${statusMeta.className}`}>{statusMeta.label}</div>
               </div>
-              <div className="price">{item.status}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -416,6 +512,15 @@ export default function Occasion() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmLabel={confirmState.confirmLabel}
+        onConfirm={() => resolveConfirmation(true)}
+        onCancel={() => resolveConfirmation(false)}
+      />
+      <LoadingOverlay message={busyMessage} />
     </div>
   );
 }

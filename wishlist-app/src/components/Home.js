@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, resolveApiUrl } from '../services/api';
+import { LoadingOverlay, ConfirmDialog } from './FeedbackChrome';
 
 
 export default function Home() {
@@ -15,6 +16,13 @@ export default function Home() {
   const [occasions, setOccasions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [busyMessage, setBusyMessage] = useState('');
+  const [confirmState, setConfirmState] = useState({
+    open: false,
+    title: 'Confirm action',
+    message: 'Are you sure you want to continue?',
+    confirmLabel: 'Confirm',
+  });
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -24,6 +32,7 @@ export default function Home() {
     imageUrl: '',
   });
   const today = getTodayDateValue();
+  const confirmResolverRef = useRef(null);
 
   useEffect(() => {
     if (user) {
@@ -48,15 +57,52 @@ export default function Home() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   }
 
+  function showBusy(message) {
+    setBusyMessage(message);
+  }
+
+  function hideBusy() {
+    setBusyMessage('');
+  }
+
+  function confirmAction({ title, message, confirmLabel = 'Confirm' }) {
+    return new Promise((resolve) => {
+      confirmResolverRef.current = resolve;
+      setConfirmState({
+        open: true,
+        title,
+        message,
+        confirmLabel,
+      });
+    });
+  }
+
+  function resolveConfirmation(value) {
+    if (confirmResolverRef.current) {
+      confirmResolverRef.current(value);
+      confirmResolverRef.current = null;
+    }
+    setConfirmState((current) => ({ ...current, open: false }));
+  }
+
   async function handleLogin(e) {
     e.preventDefault();
     setError('');
+    if (!formData.email.trim() || !formData.password) {
+      setError('Email and password required');
+      return;
+    }
+    setShowAuthModal(false);
+    showBusy('Signing in...');
     try {
       await login(formData.email, formData.password);
-      setShowAuthModal(false);
-      loadOccasions();
+      await loadOccasions();
     } catch (err) {
       setError(err.message);
+      setAuthTab('login');
+      setShowAuthModal(true);
+    } finally {
+      hideBusy();
     }
   }
 
@@ -67,16 +113,29 @@ export default function Home() {
       setError('Name required');
       return;
     }
+    setShowAuthModal(false);
+    showBusy('Creating account...');
     try {
       await signup(formData.name, formData.email, formData.password);
       setAuthTab('login');
+      setFormData((current) => ({
+        ...current,
+        name: '',
+        password: '',
+      }));
+      setShowAuthModal(true);
     } catch (err) {
       setError(err.message);
+      setAuthTab('signup');
+      setShowAuthModal(true);
+    } finally {
+      hideBusy();
     }
   }
 
   async function handleCreateOccasion(e) {
     e.preventDefault();
+    setError('');
     if (!formData.title) {
       setError('Title required');
       return;
@@ -85,27 +144,53 @@ export default function Home() {
       setError('Event date must be today or in the future');
       return;
     }
+    setShowCreateModal(false);
+    showBusy('Creating occasion...');
     try {
       const newOccasion = await api.createOccasion({
         title: formData.title,
         eventDate: formData.eventDate || null,
         imageUrl: formData.imageUrl,
       });
-      setShowCreateModal(false);
-      setFormData({ ...formData, title: '', eventDate: '', imageUrl: '' });
-      setOccasions([...occasions, newOccasion]);
+      setFormData((current) => ({ ...current, title: '', eventDate: '', imageUrl: '' }));
+      setOccasions((current) => [...current, newOccasion]);
     } catch (err) {
       setError(err.message);
+      setShowCreateModal(true);
+    } finally {
+      hideBusy();
     }
   }
 
   async function handleDeleteOccasion(id) {
-    if (!confirm('Delete this occasion?')) return;
+    setError('');
+    const confirmed = await confirmAction({
+      title: 'Delete occasion',
+      message: 'This wishlist will be removed permanently.',
+      confirmLabel: 'Delete',
+    });
+    if (!confirmed) return;
+    showBusy('Deleting occasion...');
     try {
       await api.deleteOccasion(id);
-      loadOccasions();
+      await loadOccasions();
     } catch (err) {
       setError(err.message);
+    } finally {
+      hideBusy();
+    }
+  }
+
+  async function handleLogout() {
+    setError('');
+    showBusy('Signing out...');
+    try {
+      await logout();
+      setOccasions([]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      hideBusy();
     }
   }
 
@@ -122,7 +207,7 @@ export default function Home() {
         </div>
         <div className="nav-actions">
           {isLoggedIn ? (
-            <button className="ghost" onClick={logout}>
+            <button className="ghost" onClick={handleLogout}>
               Sign Out
             </button>
           ) : (
@@ -411,6 +496,15 @@ export default function Home() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        confirmLabel={confirmState.confirmLabel}
+        onConfirm={() => resolveConfirmation(true)}
+        onCancel={() => resolveConfirmation(false)}
+      />
+      <LoadingOverlay message={busyMessage} />
     </div>
   );
 }

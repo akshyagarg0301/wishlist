@@ -168,6 +168,24 @@
       </div>
     </div>
 
+    <div class="progress-overlay" id="progress-overlay" aria-hidden="true">
+      <div class="progress-panel" role="status" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <p id="progress-message">Working...</p>
+      </div>
+    </div>
+
+    <div class="modal" id="confirm-modal" aria-hidden="true">
+      <div class="modal-card confirm-card">
+        <h3 id="confirm-title">Delete Item</h3>
+        <p id="confirm-message" class="confirm-copy">Are you sure you want to continue?</p>
+        <div class="dialog-actions">
+          <button class="ghost" id="confirm-cancel" type="button">Cancel</button>
+          <button class="ghost danger" id="confirm-accept" type="button">Delete</button>
+        </div>
+      </div>
+    </div>
+
     <div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
 
     <script src="/app.js"></script>
