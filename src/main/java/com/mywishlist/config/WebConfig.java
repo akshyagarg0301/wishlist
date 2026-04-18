@@ -10,12 +10,16 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
     @Value("${app.cors.allowed-origins:http://localhost:8080,http://giftly.com,https://giftlyorder.netlify.app}")
     private String allowedOriginsProp;
+
+    @Value("${app.upload.dir:uploads}")
+    private String uploadDir;
 
     private List<String> allowedOrigins() {
         return Arrays.stream(allowedOriginsProp.split(","))
@@ -32,6 +36,12 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:./" + uploadDir + "/");
     }
 
     @Bean
