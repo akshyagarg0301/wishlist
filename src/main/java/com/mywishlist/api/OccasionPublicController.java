@@ -72,13 +72,13 @@ public class OccasionPublicController {
 
     @PostMapping("/{occasionId}/reveal")
     public OccasionResponse reveal(@PathVariable String occasionId) {
-        Occasion occasion = occasionService.reveal(occasionId);
+        Occasion occasion = occasionService.reveal(occasionId, CurrentUserContext.getUserId());
         return toResponse(occasion);
     }
 
     @PostMapping("/{occasionId}/hide")
     public OccasionResponse hide(@PathVariable String occasionId) {
-        Occasion occasion = occasionService.hide(occasionId);
+        Occasion occasion = occasionService.hide(occasionId, CurrentUserContext.getUserId());
         return toResponse(occasion);
     }
 

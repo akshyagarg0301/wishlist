@@ -299,8 +299,8 @@ async function autofillGiftFromLink() {
     if (giftDescription && !giftDescription.value.trim()) {
       giftDescription.value = product.description || "";
     }
-    if (giftImage && !giftImage.value.trim()) {
-      giftImage.value = product.imageUrl || "";
+    if (imagePreview && !giftImageUpload?.files?.length && product.imageUrl) {
+      imagePreview.innerHTML = `<img src="${product.imageUrl}" alt="Preview" style="max-width: 100%; max-height: 100%;">`;
     }
     if (giftLink && product.purchaseLink) {
       giftLink.value = product.purchaseLink;
@@ -467,39 +467,13 @@ createGiftBtn?.addEventListener("click", async () => {
     showToast(err.message, "error");
   }
 });
-  setFieldError(giftLink, false);
-  if (!purchaseLink) {
-    setFieldError(giftLink, true);
-    showToast("Purchase link required.", "error");
-    return;
-  }
-  try {
-    const data = await request("/api/gifts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        description,
-        imageUrl,
-        purchaseLink,
-        occasionId,
-      }),
-    });
-    appendOwnerGift(data);
-    resetGiftForm();
-    hideModal(giftModal);
-    showToast("Gift Item added successfully.");
-  } catch (err) {
-    showToast(err.message, "error");
-  }
-});
 
 giftLink?.addEventListener("blur", () => {
   const value = giftLink.value.trim();
   if (!looksLikeProductLink(value)) {
     return;
   }
-  if (giftName?.value.trim() || giftDescription?.value.trim() || giftImage?.value.trim()) {
+  if (giftName?.value.trim() || giftDescription?.value.trim() || giftImageUpload?.files?.length) {
     return;
   }
   autofillGiftFromLink();

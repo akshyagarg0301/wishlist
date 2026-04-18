@@ -36,9 +36,7 @@ public class OccasionService {
 
     public void delete(String id, String recipientId) {
         Occasion occasion = get(id);
-        if (!occasion.getRecipientId().equals(recipientId)) {
-            throw new NotFoundException("Occasion not found");
-        }
+        assertOwner(occasion, recipientId);
         List<GiftItem> gifts = giftItemRepository.findByOccasionIdAndDeletedFalse(id);
         boolean hasPurchased = gifts.stream()
                 .anyMatch(item -> item.getStatus() == com.mywishlist.domain.GiftStatus.PURCHASED);
@@ -53,15 +51,17 @@ public class OccasionService {
         occasionRepository.save(occasion);
     }
 
-    public Occasion reveal(String id) {
+    public Occasion reveal(String id, String recipientId) {
         Occasion occasion = get(id);
+        assertOwner(occasion, recipientId);
         assertNotExpired(occasion);
         occasion.setRevealUnlocked(true);
         return occasionRepository.save(occasion);
     }
 
-    public Occasion hide(String id) {
+    public Occasion hide(String id, String recipientId) {
         Occasion occasion = get(id);
+        assertOwner(occasion, recipientId);
         assertNotExpired(occasion);
         occasion.setRevealUnlocked(false);
         return occasionRepository.save(occasion);
@@ -87,6 +87,12 @@ public class OccasionService {
         }
         LocalDate revealAt = occasion.getRevealAt();
         return revealAt != null && !revealAt.isAfter(LocalDate.now());
+    }
+
+    private void assertOwner(Occasion occasion, String recipientId) {
+        if (!occasion.getRecipientId().equals(recipientId)) {
+            throw new NotFoundException("Occasion not found");
+        }
     }
 
     private void validateEventDate(LocalDate eventDate) {

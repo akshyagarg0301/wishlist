@@ -16,6 +16,11 @@ export default function Occasion() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [error, setError] = useState('');
   const [giftPreviewLoading, setGiftPreviewLoading] = useState(false);
+  const [guestIdentity, setGuestIdentity] = useState({
+    verified: false,
+    name: '',
+    email: '',
+  });
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -31,21 +36,16 @@ export default function Occasion() {
   async function loadData() {
     setLoading(true);
     try {
-      const occasionData = await api.getOccasion(id);
-      setOccasion(occasionData);
-
-      const recipientId = user;
-      const isOwnerCheck = occasionData.recipientId === recipientId;
-      setIsOwner(isOwnerCheck);
-
-      let giftsData;
-      if (isOwnerCheck) {
-        giftsData = await api.getGifts();
-        giftsData = giftsData.filter((g) => g.occasionId === id);
-      } else {
-        giftsData = await api.getOccasionGifts(id);
-      }
-      setGifts(giftsData);
+      setError('');
+      const pageData = await api.getOccasionPage(id);
+      setOccasion(pageData.occasion);
+      setIsOwner(Boolean(pageData.owner));
+      setGuestIdentity({
+        verified: Boolean(pageData.guestVerified),
+        name: pageData.guestName || '',
+        email: pageData.guestEmail || '',
+      });
+      setGifts(pageData.gifts || []);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -135,8 +135,12 @@ export default function Occasion() {
   }
 
   async function handleReserve(giftId) {
+    if (!guestIdentity.verified || !guestIdentity.name || !guestIdentity.email) {
+      setError('Sign in is required to reserve gifts');
+      return;
+    }
     try {
-      await api.reserveGift(giftId, 'Guest', 'guest@example.com');
+      await api.reserveGift(giftId, guestIdentity.name, guestIdentity.email);
       loadData();
     } catch (err) {
       setError(err.message);
@@ -144,8 +148,12 @@ export default function Occasion() {
   }
 
   async function handlePurchase(giftId) {
+    if (!guestIdentity.verified || !guestIdentity.name || !guestIdentity.email) {
+      setError('Sign in is required to purchase gifts');
+      return;
+    }
     try {
-      await api.purchaseGift(giftId, 'Guest', 'guest@example.com');
+      await api.purchaseGift(giftId, guestIdentity.name, guestIdentity.email);
       loadData();
     } catch (err) {
       setError(err.message);
@@ -176,7 +184,7 @@ export default function Occasion() {
         </div>
         <div className="nav-actions">
           <button className="ghost" onClick={() => navigate('/')}>
-            ��� Back to My Wishlists
+            ← Back to My Wishlists
           </button>
         </div>
       </nav>
@@ -219,6 +227,11 @@ export default function Occasion() {
         )}
 
         <h3 className="subhead">Gift Items</h3>
+        {!isOwner && !guestIdentity.verified && (
+          <div className="empty-state" style={{ marginBottom: 12 }}>
+            Sign in to reserve or mark gifts as purchased.
+          </div>
+        )}
         {gifts.length === 0 && (
           <div className="empty-state">
             {isOwner && isExpired
@@ -256,10 +269,18 @@ export default function Occasion() {
                 )}
                 {!isOwner && item.status === 'AVAILABLE' && (
                   <div className="actions">
-                    <button className="ghost small" onClick={() => handleReserve(item.id)}>
+                    <button
+                      className="ghost small"
+                      onClick={() => handleReserve(item.id)}
+                      disabled={!guestIdentity.verified}
+                    >
                       Reserve
                     </button>
-                    <button className="primary small" onClick={() => handlePurchase(item.id)}>
+                    <button
+                      className="primary small"
+                      onClick={() => handlePurchase(item.id)}
+                      disabled={!guestIdentity.verified}
+                    >
                       Mark Purchased
                     </button>
                   </div>

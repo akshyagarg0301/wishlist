@@ -63,6 +63,10 @@ export default function Home() {
   async function handleSignup(e) {
     e.preventDefault();
     setError('');
+    if (!formData.name.trim()) {
+      setError('Name required');
+      return;
+    }
     try {
       await signup(formData.name, formData.email, formData.password);
       setAuthTab('login');
@@ -314,6 +318,16 @@ export default function Home() {
             ) : (
               <form className="auth-form" onSubmit={handleSignup}>
                 <h3>Sign Up</h3>
+                <label>
+                  Name
+                  <input
+                    name="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    placeholder="Alex"
+                  />
+                </label>
                 <label>
                   Email
                   <input
