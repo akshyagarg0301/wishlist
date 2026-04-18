@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { api, resolveApiUrl } from '../services/api';
 
 
 export default function Home() {
@@ -234,11 +234,17 @@ export default function Home() {
                   className="wishlist-card"
                   onClick={() => navigate(`/occasion/${item.id}`)}
                 >
-                  <div
-                    className={`wishlist-cover ${
-                      ['cover-a', 'cover-b', 'cover-c'][index % 3]
-                    }`}
-                  ></div>
+                  <div className="wishlist-cover">
+                    {item.imageUrl ? (
+                      <img src={resolveApiUrl(item.imageUrl)} alt={item.title} className="occasion-image" />
+                    ) : (
+                      <div
+                        className={`wishlist-cover-fill ${
+                          ['cover-a', 'cover-b', 'cover-c'][index % 3]
+                        }`}
+                      ></div>
+                    )}
+                  </div>
                   <div className="wishlist-body">
                     <span className="pill">{item.expired ? 'Expired' : 'Occasion'}</span>
                     <h3>{item.title}</h3>

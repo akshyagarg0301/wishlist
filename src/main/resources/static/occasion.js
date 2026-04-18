@@ -3,6 +3,8 @@ const toastContainer = document.getElementById("toast-container");
 const occasionPillEl = document.getElementById("occasion-pill");
 const titleEl = document.getElementById("occasion-title");
 const dateEl = document.getElementById("occasion-date");
+const occasionBannerMedia = document.getElementById("occasion-banner-media");
+const occasionBannerImage = document.getElementById("occasion-banner-image");
 const expiredNoteEl = document.getElementById("expired-note");
 const newGiftBtn = document.getElementById("new-gift-btn");
 const ownerControls = document.getElementById("owner-controls");
@@ -140,7 +142,7 @@ function renderGiftThumb(item) {
   if (!item.imageUrl) {
     return `<div class="gift-thumb gold"></div>`;
   }
-  return `<div class="gift-thumb"><img src="${item.imageUrl}" alt="${item.name}"></div>`;
+  return `<div class="gift-thumb"><img src="${resolveImageUrl(item.imageUrl)}" alt="${item.name}"></div>`;
 }
 
 function renderGuestGifts(items) {
@@ -187,6 +189,17 @@ function ensureAbsoluteUrl(url) {
     return trimmed;
   }
   return `https://${trimmed}`;
+}
+
+function resolveImageUrl(url) {
+  if (!url) return "";
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+  if (url.startsWith("/")) {
+    return `${API_BASE}${url}`;
+  }
+  return `${API_BASE}/${url}`;
 }
 
 function appendOwnerGift(item) {
@@ -367,6 +380,16 @@ function applyOccasionPage(pageData) {
   }
   titleEl.textContent = occasionData.title;
   dateEl.textContent = `${occasionData.eventDate || "No date"}${occasionData.expired ? " · Expired" : ""}`;
+  if (occasionBannerMedia && occasionBannerImage) {
+    if (occasionData.imageUrl) {
+      occasionBannerImage.src = resolveImageUrl(occasionData.imageUrl);
+      occasionBannerImage.alt = occasionData.title;
+      occasionBannerMedia.classList.remove("hidden");
+    } else {
+      occasionBannerImage.removeAttribute("src");
+      occasionBannerMedia.classList.add("hidden");
+    }
+  }
   const canEditOccasion = isOwner && !occasionData?.expired;
   expiredNoteEl?.classList.toggle("hidden", !occasionData.expired || !isOwner);
   ownerControls.classList.toggle("hidden", !canEditOccasion);

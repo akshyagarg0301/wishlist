@@ -277,16 +277,31 @@ h1 {
 
 .wishlist-cover {
   height: 140px;
-  background-size: cover;
-  background-position: center;
+  overflow: hidden;
+}
+
+.wishlist-cover img,
+.wishlist-cover-fill {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
 }
 
 .cover-a {
   background-image: url("./assets/confetti.svg");
+  background-size: cover;
+  background-position: center;
 }
 
 .cover-b {
   background-image: url("./assets/soft.svg");
+  background-size: cover;
+  background-position: center;
+}
+
+.cover-c {
+  background: linear-gradient(135deg, #f4d8b8, #e0b7a5);
 }
 
 .wishlist-body {
@@ -342,10 +357,29 @@ h1 {
   padding: 28px;
   color: #fff;
   margin: 12px 0 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 20px;
+  align-items: center;
 }
 
 .detail h2 {
   margin: 12px 0 6px;
+}
+
+.banner-media {
+  width: 160px;
+  height: 120px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(20, 14, 10, 0.2);
+}
+
+.banner-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .back {
@@ -639,5 +673,15 @@ textarea {
   .gift-card {
     grid-template-columns: 1fr;
     text-align: left;
+  }
+
+  .detail .banner {
+    grid-template-columns: 1fr;
+  }
+
+  .banner-media {
+    width: 100%;
+    max-width: 280px;
+    height: 180px;
   }
 }

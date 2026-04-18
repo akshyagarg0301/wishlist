@@ -123,6 +123,17 @@ function uploadImageFile(file) {
     .then(data => data.imageUrl);
 }
 
+function resolveImageUrl(path) {
+  if (!path) return "";
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+  if (path.startsWith("/")) {
+    return `${API_BASE}${path}`;
+  }
+  return `${API_BASE}/${path}`;
+}
+
 function renderMyOccasions(items) {
   if (!myOccasionCards) return;
   myOccasions = [...items];
@@ -132,7 +143,7 @@ function renderMyOccasions(items) {
       (item, index) => `
       <article class="wishlist-card" data-occasion-id="${item.id}">
         <div class="wishlist-cover">
-          ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.title}" class="occasion-image">` : `<div class="cover-${["a", "b", "c"][index % 3]}"></div>`}
+          ${item.imageUrl ? `<img src="${resolveImageUrl(item.imageUrl)}" alt="${item.title}" class="occasion-image">` : `<div class="cover-${["a", "b", "c"][index % 3]}"></div>`}
         </div>
         <div class="wishlist-body">
           <span class="pill">${item.expired ? "Expired" : "Occasion"}</span>

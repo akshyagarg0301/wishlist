@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { api, resolveApiUrl } from '../services/api';
 
 
 export default function Occasion() {
@@ -199,6 +199,11 @@ export default function Occasion() {
               {isExpired ? ' · Expired' : ''}
             </p>
           </div>
+          {occasion?.imageUrl && (
+            <div className="banner-media">
+              <img src={resolveApiUrl(occasion.imageUrl)} alt={occasion.title} />
+            </div>
+          )}
           {isOwner && !isExpired && (
             <button className="primary" onClick={() => setShowGiftModal(true)}>
               + New Gift
@@ -245,7 +250,7 @@ export default function Occasion() {
           {gifts.map((item) => (
             <div key={item.id} className={`gift-card ${item.status === 'PURCHASED' ? 'purchased' : ''}`}>
               <div className="gift-thumb gold">
-                {item.imageUrl ? <img src={item.imageUrl} alt={item.name} /> : null}
+                {item.imageUrl ? <img src={resolveApiUrl(item.imageUrl)} alt={item.name} /> : null}
               </div>
               <div className="gift-info">
                 <h4>{item.name}</h4>

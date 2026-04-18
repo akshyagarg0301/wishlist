@@ -1,5 +1,18 @@
 const API_BASE = process.env.REACT_APP_API_BASE || 'http://localhost:8080';
 
+export function resolveApiUrl(path) {
+  if (!path) {
+    return '';
+  }
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
+  if (path.startsWith('/')) {
+    return `${API_BASE}${path}`;
+  }
+  return `${API_BASE}/${path}`;
+}
+
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
     credentials: 'include',
