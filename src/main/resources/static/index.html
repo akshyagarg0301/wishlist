@@ -158,10 +158,11 @@
             Date
             <input id="occasion-date" type="date" />
           </label>
-          <label>
-            Image URL
-            <input id="occasion-image" type="url" placeholder="https://example.com/bday.jpg" />
-          </label>
+           <label>
+             Upload Image
+             <input id="occasion-image-upload" type="file" accept="image/*" />
+             <div id="occasion-image-preview" style="margin-top: 8px; max-width: 200px; max-height: 200px;"></div>
+           </label>
           <button class="primary" id="create-occasion" style="margin-top: 12px">Add Occasion</button>
         </div>
       </div>

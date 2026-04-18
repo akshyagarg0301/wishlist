@@ -86,10 +86,11 @@
           Description
           <textarea id="gift-description" rows="3" placeholder="Over-ear, black."></textarea>
         </label>
-        <label>
-          Image URL
-          <input id="gift-image" type="url" placeholder="https://example.com/hp.jpg" />
-        </label>
+        <div>
+          <label for="gift-image-upload">Upload Image</label>
+          <input id="gift-image-upload" type="file" accept="image/*" />
+          <div id="image-preview" style="margin-top: 8px; max-width: 200px; max-height: 200px;"></div>
+        </div>
         <label>
           <span class="label-text">Purchase Link<span class="required">*</span></span>
           <input id="gift-link" type="url" placeholder="https://store.example.com/item" />

@@ -361,18 +361,19 @@ h1 {
 
 .gift-list {
   display: grid;
-  gap: 12px;
+  gap: 24px;
 }
 
 .gift-card {
   background: var(--card);
   border-radius: var(--radius-sm);
-  padding: 16px;
+  padding: 20px;
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 16px;
+  grid-template-columns: 80px 1fr 80px;
+  gap: 20px;
   align-items: center;
   box-shadow: var(--shadow);
+  min-height: 120px;
 }
 
 .gift-card[data-status]:not([data-status="AVAILABLE"]) .actions {
@@ -396,8 +397,8 @@ h1 {
 }
 
 .gift-thumb {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   border-radius: 12px;
   background: #f0c27b;
   overflow: hidden;

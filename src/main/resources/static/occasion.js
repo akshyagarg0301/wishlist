@@ -24,7 +24,8 @@ const guestGiftList = document.getElementById("guest-gift-list");
 const guestGiftEmpty = document.getElementById("guest-gift-empty");
 const giftName = document.getElementById("gift-name");
 const giftDescription = document.getElementById("gift-description");
-const giftImage = document.getElementById("gift-image");
+const giftImageUpload = document.getElementById("gift-image-upload");
+const imagePreview = document.getElementById("image-preview");
 const giftLink = document.getElementById("gift-link");
 const createGiftBtn = document.getElementById("create-gift");
 
@@ -108,23 +109,27 @@ function renderOwnerGifts(items) {
             ? `Buyer: ${item.buyerName}`
             : "Buyer hidden";
       const link = ensureAbsoluteUrl(item.purchaseLink);
+      
+      // Limit description to 100 words
+      const description = item.description || "No description";
+      const limitedDescription = description.split(' ').slice(0, 100).join(' ') + (description.split(' ').length > 100 ? '...' : '');
+      
       return `
       <a class="gift-card-link" href="${link || "#"}" target="_blank" rel="noopener noreferrer" ${link ? "" : "aria-disabled=\"true\""}>
         <div class="gift-card ${item.status === "PURCHASED" ? "purchased" : ""}">
           ${renderGiftThumb(item)}
           <div class="gift-info">
             <h4>${item.name}</h4>
-            <p>${item.description || "No description"}</p>
+            <p>${limitedDescription}</p>
             <div class="hint">${buyerLabel}</div>
             ${
               isOccasionExpired()
                 ? ""
                 : `<div class="actions">
-                    <button class="ghost small danger" data-action="delete-gift" data-gift-id="${item.id}">Delete</button>
-                  </div>`
+                     <button class="ghost small danger" data-action="delete-gift" data-gift-id="${item.id}">Delete</button>
+                   </div>`
             }
           </div>
-          <div class="price">${item.status}</div>
         </div>
       </a>`;
     })
@@ -149,23 +154,28 @@ function renderGuestGifts(items) {
   guestGiftEmpty.classList.add("hidden");
   guestGiftList.innerHTML = items
     .map(
-      (item) => `
+      (item) => {
+        // Limit description to 100 words
+        const description = item.description || "No description";
+        const limitedDescription = description.split(' ').slice(0, 100).join(' ') + (description.split(' ').length > 100 ? '...' : '');
+        
+        return `
       <div class="gift-card ${item.status === "PURCHASED" ? "purchased" : ""}" data-link="${ensureAbsoluteUrl(item.purchaseLink) || ""}" data-status="${item.status}">
         ${renderGiftThumb(item)}
         <div class="gift-info">
           <h4>${item.name}</h4>
-          <p>${item.description || "No description"}</p>
+          <p>${limitedDescription}</p>
           ${
             item.status === "AVAILABLE"
               ? `<div class="actions">
-                  <button class="ghost small" data-action="reserve" data-gift-id="${item.id}" ${!guestVerified ? "disabled" : ""}>Reserve</button>
-                  <button class="primary small" data-action="purchase" data-gift-id="${item.id}" ${!guestVerified ? "disabled" : ""}>Mark Purchased</button>
-                </div>`
+                   <button class="ghost small" data-action="reserve" data-gift-id="${item.id}" ${!guestVerified ? "disabled" : ""}>Reserve</button>
+                   <button class="primary small" data-action="purchase" data-gift-id="${item.id}" ${!guestVerified ? "disabled" : ""}>Mark Purchased</button>
+                 </div>`
               : `<div class="hint">This item is ${item.status.toLowerCase()}.</div>`
           }
         </div>
-        <div class="price">${item.status}</div>
       </div>`
+      }
     )
     .join("");
 }
@@ -190,12 +200,46 @@ function resetGiftForm() {
   if (giftDescription) {
     giftDescription.value = "";
   }
-  if (giftImage) {
-    giftImage.value = "";
+  if (giftImageUpload) {
+    giftImageUpload.value = "";
+  }
+  if (imagePreview) {
+    imagePreview.innerHTML = "";
   }
   if (giftLink) {
     giftLink.value = "";
   }
+}
+
+function handleImageUpload() {
+  const file = giftImageUpload.files[0];
+  if (!file) {
+    imagePreview.innerHTML = "";
+    return;
+  }
+
+  // Check if file is an image
+  if (!file.type.startsWith('image/')) {
+    showToast("Please select an image file", "error");
+    giftImageUpload.value = "";
+    imagePreview.innerHTML = "";
+    return;
+  }
+
+  // Check file size (limit to 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    showToast("Image file too large (max 5MB)", "error");
+    giftImageUpload.value = "";
+    imagePreview.innerHTML = "";
+    return;
+  }
+
+  // Display preview
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    imagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 100%;">`;
+  };
+  reader.readAsDataURL(file);
 }
 
 async function previewProductFromLink(url) {
@@ -204,6 +248,22 @@ async function previewProductFromLink(url) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url }),
   });
+}
+
+async function uploadImageFile(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await fetch(`${API_BASE}/api/upload/image`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(errorText || "Upload failed");
+  }
+  const data = await response.json();
+  return data.imageUrl;
 }
 
 function looksLikeProductLink(value) {
@@ -366,8 +426,47 @@ createGiftBtn?.addEventListener("click", async () => {
   }
   const name = giftName.value.trim();
   const description = giftDescription.value.trim();
-  const imageUrl = giftImage.value.trim();
+  
+  // Handle image upload if file is selected
+  let imageUrl = "";
+  if (giftImageUpload && giftImageUpload.files[0]) {
+    try {
+      showToast("Uploading image...", "success");
+      imageUrl = await uploadImageFile(giftImageUpload.files[0]);
+    } catch (err) {
+      showToast("Failed to upload image: " + err.message, "error");
+      return;
+    }
+  }
+  
   const purchaseLink = giftLink.value.trim();
+  setFieldError(giftLink, false);
+  if (!purchaseLink) {
+    setFieldError(giftLink, true);
+    showToast("Purchase link required.", "error");
+    return;
+  }
+  
+  try {
+    const data = await request("/api/gifts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        description,
+        imageUrl,
+        purchaseLink,
+        occasionId,
+      }),
+    });
+    appendOwnerGift(data);
+    resetGiftForm();
+    hideModal(giftModal);
+    showToast("Gift Item added successfully.");
+  } catch (err) {
+    showToast(err.message, "error");
+  }
+});
   setFieldError(giftLink, false);
   if (!purchaseLink) {
     setFieldError(giftLink, true);
@@ -407,17 +506,21 @@ giftLink?.addEventListener("blur", () => {
 });
 
 giftLink?.addEventListener("paste", () => {
-  window.setTimeout(() => {
-    const value = giftLink.value.trim();
-    if (!looksLikeProductLink(value)) {
-      return;
-    }
-    if (giftName?.value.trim() || giftDescription?.value.trim() || giftImage?.value.trim()) {
-      return;
-    }
-    autofillGiftFromLink();
-  }, 0);
-});
+    window.setTimeout(() => {
+      const value = giftLink.value.trim();
+      if (!looksLikeProductLink(value)) {
+        return;
+      }
+      // Only check name and description for autofill since we only allow uploads now
+      if (giftName?.value.trim() || giftDescription?.value.trim()) {
+        return;
+      }
+      autofillGiftFromLink();
+    }, 0);
+  });
+
+  // Handle image upload
+  giftImageUpload?.addEventListener("change", handleImageUpload);
 
 guestGiftList?.addEventListener("click", async (event) => {
   const button = event.target.closest("button[data-action]");

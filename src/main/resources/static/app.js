@@ -12,7 +12,8 @@ const authPanels = document.querySelectorAll("[data-auth-panel]");
 const createOccasionBtn = document.getElementById("create-occasion");
 const occasionTitleInput = document.getElementById("occasion-title");
 const occasionDateInput = document.getElementById("occasion-date");
-const occasionImageInput = document.getElementById("occasion-image");
+const occasionImageUpload = document.getElementById("occasion-image-upload");
+const occasionImagePreview = document.getElementById("occasion-image-preview");
 
 const myOccasionCards = document.getElementById("my-occasion-cards");
 const myOccasionEmpty = document.getElementById("my-occasion-empty");
@@ -105,6 +106,23 @@ function getTodayDateValue() {
   return `${year}-${month}-${day}`;
 }
 
+function uploadImageFile(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return fetch(`${API_BASE}/api/upload/image`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  })
+    .then(response => {
+      if (!response.ok) {
+        return response.text().then(text => { throw new Error(text || "Upload failed"); });
+      }
+      return response.json();
+    })
+    .then(data => data.imageUrl);
+}
+
 function renderMyOccasions(items) {
   if (!myOccasionCards) return;
   myOccasions = [...items];
@@ -145,8 +163,11 @@ function resetCreateOccasionForm() {
   if (occasionDateInput) {
     occasionDateInput.value = "";
   }
-  if (occasionImageInput) {
-    occasionImageInput.value = "";
+  if (occasionImageUpload) {
+    occasionImageUpload.value = "";
+  }
+  if (occasionImagePreview) {
+    occasionImagePreview.innerHTML = "";
   }
 }
 
@@ -202,6 +223,38 @@ openCreate2?.addEventListener("click", () => {
 
 closeAuth?.addEventListener("click", () => hideModal(authModal));
 closeCreate?.addEventListener("click", () => hideModal(createModal));
+
+// Handle occasion image upload preview
+occasionImageUpload?.addEventListener("change", function() {
+  const file = this.files[0];
+  if (!file) {
+    occasionImagePreview.innerHTML = "";
+    return;
+  }
+
+  // Check if file is an image
+  if (!file.type.startsWith('image/')) {
+    showToast("Please select an image file", "error");
+    this.value = "";
+    occasionImagePreview.innerHTML = "";
+    return;
+  }
+
+  // Check file size (limit to 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    showToast("Image file too large (max 5MB)", "error");
+    this.value = "";
+    occasionImagePreview.innerHTML = "";
+    return;
+  }
+
+  // Display preview
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    occasionImagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 100%;">`;
+  };
+  reader.readAsDataURL(file);
+});
 
 [authModal, createModal].forEach((modal) => {
   modal.addEventListener("click", (event) => {
@@ -285,7 +338,19 @@ createOccasionBtn.addEventListener("click", async () => {
   }
   const title = document.getElementById("occasion-title").value.trim();
   const eventDate = document.getElementById("occasion-date").value;
-  const imageUrl = document.getElementById("occasion-image").value.trim();
+  
+  // Handle image upload if file is selected
+  let imageUrl = "";
+  if (occasionImageUpload && occasionImageUpload.files[0]) {
+    try {
+      showToast("Uploading image...", "success");
+      imageUrl = await uploadImageFile(occasionImageUpload.files[0]);
+    } catch (err) {
+      showToast("Failed to upload image: " + err.message, "error");
+      return;
+    }
+  }
+  
   if (!title) {
     showToast("Occasion title required.", "error");
     return;
