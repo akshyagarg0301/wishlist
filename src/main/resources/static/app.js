@@ -127,12 +127,13 @@ function renderMyOccasions(items) {
   if (!myOccasionCards) return;
   myOccasions = [...items];
   occasionIndex = new Map(items.map((item) => [item.id, item]));
-  const covers = ["cover-a", "cover-b", "cover-c"];
   myOccasionCards.innerHTML = items
     .map(
       (item, index) => `
       <article class="wishlist-card" data-occasion-id="${item.id}">
-        <div class="wishlist-cover ${covers[index % covers.length]}"></div>
+        <div class="wishlist-cover">
+          ${item.imageUrl ? `<img src="${item.imageUrl}" alt="${item.title}" class="occasion-image">` : `<div class="cover-${["a", "b", "c"][index % 3]}"></div>`}
+        </div>
         <div class="wishlist-body">
           <span class="pill">${item.expired ? "Expired" : "Occasion"}</span>
           <h3>${item.title}</h3>
@@ -224,37 +225,8 @@ openCreate2?.addEventListener("click", () => {
 closeAuth?.addEventListener("click", () => hideModal(authModal));
 closeCreate?.addEventListener("click", () => hideModal(createModal));
 
-// Handle occasion image upload preview
-occasionImageUpload?.addEventListener("change", function() {
-  const file = this.files[0];
-  if (!file) {
-    occasionImagePreview.innerHTML = "";
-    return;
-  }
 
-  // Check if file is an image
-  if (!file.type.startsWith('image/')) {
-    showToast("Please select an image file", "error");
-    this.value = "";
-    occasionImagePreview.innerHTML = "";
-    return;
-  }
-
-  // Check file size (limit to 5MB)
-  if (file.size > 5 * 1024 * 1024) {
-    showToast("Image file too large (max 5MB)", "error");
-    this.value = "";
-    occasionImagePreview.innerHTML = "";
-    return;
-  }
-
-  // Display preview
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    occasionImagePreview.innerHTML = `<img src="${e.target.result}" alt="Preview" style="max-width: 100%; max-height: 100%;">`;
-  };
-  reader.readAsDataURL(file);
-});
+// No preview needed for occasion image upload before adding
 
 [authModal, createModal].forEach((modal) => {
   modal.addEventListener("click", (event) => {
