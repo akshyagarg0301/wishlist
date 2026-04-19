@@ -5,7 +5,10 @@ import com.mywishlist.domain.Event;
 import com.mywishlist.repository.GiftItemRepository;
 import com.mywishlist.repository.EventRepository;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,6 +30,16 @@ public class EventService {
 
     public List<Event> listForRecipient(String recipientId) {
         return eventRepository.findByRecipientIdAndDeletedFalse(recipientId);
+    }
+
+    public Map<String, Long> getGiftCountsForRecipient(String recipientId) {
+        return giftItemRepository.findByRecipientIdAndDeletedFalse(recipientId).stream()
+                .filter(item -> item.getEventId() != null && !item.getEventId().isBlank())
+                .collect(Collectors.groupingBy(GiftItem::getEventId, Collectors.counting()));
+    }
+
+    public int getGiftCountForEvent(String eventId) {
+        return giftItemRepository.findByEventIdAndDeletedFalse(eventId).size();
     }
 
     public Event get(String id) {
@@ -70,6 +83,14 @@ public class EventService {
     public boolean isExpired(Event event) {
         LocalDate eventDate = event.getEventDate();
         return eventDate != null && eventDate.isBefore(LocalDate.now());
+    }
+
+    public Long getDaysUntil(Event event) {
+        LocalDate eventDate = event.getEventDate();
+        if (eventDate == null) {
+            return null;
+        }
+        return ChronoUnit.DAYS.between(LocalDate.now(), eventDate);
     }
 
     public void assertNotExpired(Event event) {

@@ -1,5 +1,4 @@
 const API_BASE = "https://wishlist-1-6omc.onrender.com";
-const DEFAULT_EVENT_IMAGE = "/assets/default-event.svg";
 const authModal = document.getElementById("auth-modal");
 const createModal = document.getElementById("create-modal");
 
@@ -126,6 +125,11 @@ let isLoggedIn = false;
 let eventIndex = new Map();
 let myEvents = [];
 let confirmResolver = null;
+const eventDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+});
 
 function updateAuthAction() {
   if (!authAction) return;
@@ -193,8 +197,53 @@ function resolveImageUrl(path) {
   return `${API_BASE}/${path}`;
 }
 
-function getEventImageUrl(path) {
-  return resolveImageUrl(path || DEFAULT_EVENT_IMAGE);
+function parseEventDate(value) {
+  if (!value || typeof value !== "string") return null;
+  const [year, month, day] = value.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
+function formatEventDate(value) {
+  const date = parseEventDate(value);
+  return date ? eventDateFormatter.format(date) : "No date set";
+}
+
+function formatGiftCount(count) {
+  const safeCount = Number.isFinite(Number(count)) ? Number(count) : 0;
+  return `${safeCount} gift${safeCount === 1 ? "" : "s"} planned`;
+}
+
+function formatDaysLeft(item) {
+  if (item.expired) return "Expired";
+  const daysUntil = item.daysUntilEvent;
+  if (daysUntil == null || Number.isNaN(Number(daysUntil))) {
+    return "Date pending";
+  }
+  if (Number(daysUntil) <= 0) {
+    return Number(daysUntil) === 0 ? "Today" : "Expired";
+  }
+  return `${daysUntil} day${Number(daysUntil) === 1 ? "" : "s"} left`;
+}
+
+function getEventInitials(title) {
+  if (!title) return "EV";
+  const parts = title
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+  if (parts.length === 0) return "EV";
+  return parts.map((part) => part[0]).join("").toUpperCase();
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function renderMyEvents(items) {
@@ -205,18 +254,26 @@ function renderMyEvents(items) {
     .map(
       (item) => `
       <article class="event-card" data-event-id="${item.id}">
-        <div class="event-cover">
-          <img src="${getEventImageUrl(item.imageUrl)}" alt="${item.title}" class="event-image" onerror="this.onerror=null;this.src='${getEventImageUrl("")}';">
-        </div>
-        <div class="event-body">
-          <span class="pill">${item.expired ? "Expired" : "Event"}</span>
-          <h3>${item.title}</h3>
-          <div class="meta">
-            <span>${item.eventDate || "No date"}${item.expired ? " · Expired" : ""}</span>
+        <div class="event-main">
+          <div class="event-avatar ${item.imageUrl ? "has-image" : ""}">
+            <span class="event-avatar-fallback">${escapeHtml(getEventInitials(item.title))}</span>
+            ${item.imageUrl
+              ? `<img src="${escapeHtml(resolveImageUrl(item.imageUrl))}" alt="${escapeHtml(item.title)}" class="event-avatar-image" onerror="this.remove();this.parentElement.classList.remove('has-image');">`
+              : ""}
           </div>
-          <div class="progress"><span style="width: 0%"></span></div>
+          <div class="event-summary">
+            <h3>${escapeHtml(item.title)}</h3>
+            <p class="event-date">${escapeHtml(formatEventDate(item.eventDate))}</p>
+          </div>
+        </div>
+        <div class="event-divider"></div>
+        <div class="event-footer">
+          <div class="event-stats">
+            <p class="event-stat"><span class="event-stat-icon" aria-hidden="true">🎁</span><span>${escapeHtml(formatGiftCount(item.giftCount))}</span></p>
+            <p class="event-stat"><span class="event-stat-icon" aria-hidden="true">⏳</span><span>${escapeHtml(formatDaysLeft(item))}</span></p>
+          </div>
           <div class="actions">
-            <button class="ghost small danger" data-action="delete-event" data-event-id="${item.id}">Delete</button>
+            <button class="ghost danger small event-delete" data-action="delete-event" data-event-id="${item.id}">Delete</button>
           </div>
         </div>
       </article>`

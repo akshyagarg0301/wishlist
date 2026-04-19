@@ -25,7 +25,9 @@ public class EventDtos {
             boolean surpriseMode,
             boolean revealUnlocked,
             LocalDate revealAt,
-            boolean expired
+            boolean expired,
+            int giftCount,
+            Long daysUntilEvent
     ) {
     }
 

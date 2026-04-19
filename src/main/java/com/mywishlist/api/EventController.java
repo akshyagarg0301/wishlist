@@ -7,6 +7,7 @@ import com.mywishlist.security.CurrentUserContext;
 import com.mywishlist.service.EventService;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -34,13 +35,15 @@ public class EventController {
                 request.imageUrl(),
                 surpriseMode
         );
-        return toResponse(event);
+        return toResponse(event, 0);
     }
 
     @GetMapping
     public List<EventResponse> list() {
-        return eventService.listForRecipient(CurrentUserContext.getUserId()).stream()
-                .map(this::toResponse)
+        String userId = CurrentUserContext.getUserId();
+        Map<String, Long> giftCounts = eventService.getGiftCountsForRecipient(userId);
+        return eventService.listForRecipient(userId).stream()
+                .map(event -> toResponse(event, giftCounts.getOrDefault(event.getId(), 0L).intValue()))
                 .toList();
     }
 
@@ -49,7 +52,7 @@ public class EventController {
         eventService.delete(eventId, CurrentUserContext.getUserId());
     }
 
-    private EventResponse toResponse(Event event) {
+    private EventResponse toResponse(Event event, int giftCount) {
         return new EventResponse(
                 event.getId(),
                 event.getTitle(),
@@ -59,7 +62,9 @@ public class EventController {
                 event.isSurpriseMode(),
                 event.isRevealUnlocked(),
                 event.getRevealAt(),
-                eventService.isExpired(event)
+                eventService.isExpired(event),
+                giftCount,
+                eventService.getDaysUntil(event)
         );
     }
 }

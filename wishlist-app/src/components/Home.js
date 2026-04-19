@@ -3,8 +3,61 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { api, resolveApiUrl } from '../services/api';
 import { LoadingOverlay, ConfirmDialog } from './FeedbackChrome';
-import defaultEventImage from '../assets/default-event.svg';
 
+const eventDateFormatter = new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric',
+  month: 'short',
+  year: 'numeric',
+});
+
+function parseEventDate(value) {
+  if (!value || typeof value !== 'string') {
+    return null;
+  }
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) {
+    return null;
+  }
+  return new Date(year, month - 1, day);
+}
+
+function formatEventDate(value) {
+  const date = parseEventDate(value);
+  return date ? eventDateFormatter.format(date) : 'No date set';
+}
+
+function formatGiftCount(count) {
+  const safeCount = Number.isFinite(Number(count)) ? Number(count) : 0;
+  return `${safeCount} gift${safeCount === 1 ? '' : 's'} planned`;
+}
+
+function formatDaysLeft(event) {
+  if (event.expired) {
+    return 'Expired';
+  }
+  if (event.daysUntilEvent == null || Number.isNaN(Number(event.daysUntilEvent))) {
+    return 'Date pending';
+  }
+  if (Number(event.daysUntilEvent) <= 0) {
+    return Number(event.daysUntilEvent) === 0 ? 'Today' : 'Expired';
+  }
+  return `${event.daysUntilEvent} day${Number(event.daysUntilEvent) === 1 ? '' : 's'} left`;
+}
+
+function getEventInitials(title) {
+  if (!title) {
+    return 'EV';
+  }
+  const parts = title
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2);
+  if (parts.length === 0) {
+    return 'EV';
+  }
+  return parts.map((part) => part[0]).join('').toUpperCase();
+}
 
 export default function Home() {
   const { user, loading: authLoading, login, logout, signup } = useAuth();
@@ -266,7 +319,7 @@ export default function Home() {
         <div className="section-head row">
           <div>
             <h2>My Events</h2>
-            <p>Create and manage your gift events.</p>
+            <p>Create and manage your events.</p>
           </div>
           {isLoggedIn ? (
             <button className="primary" onClick={() => setShowCreateModal(true)}>
@@ -278,30 +331,44 @@ export default function Home() {
           {!user && (
             <>
               <article className="event-card">
-                <div className="event-cover cover-a"></div>
-                <div className="event-body">
-                  <span className="pill">Birthday</span>
-                  <h3>My 30th Birthday</h3>
-                  <div className="meta">
-                    <span>Apr 15, 2026</span>
-                    <span>1/3 purchased</span>
+                <div className="event-main">
+                  <div className="event-avatar">
+                    <span className="event-avatar-fallback">MB</span>
                   </div>
-                  <div className="progress">
-                    <span style={{ width: '33%' }}></span>
+                  <div className="event-summary">
+                    <h3>My Birthday</h3>
+                    <p className="event-date">20 Apr 2026</p>
+                  </div>
+                </div>
+                <div className="event-divider"></div>
+                <div className="event-footer">
+                  <div className="event-stats">
+                    <p className="event-stat"><span className="event-stat-icon" aria-hidden="true">🎁</span><span>5 gifts planned</span></p>
+                    <p className="event-stat"><span className="event-stat-icon" aria-hidden="true">⏳</span><span>3 days left</span></p>
+                  </div>
+                  <div className="actions">
+                    <button className="ghost danger small event-delete" type="button">Delete</button>
                   </div>
                 </div>
               </article>
               <article className="event-card">
-                <div className="event-cover cover-b"></div>
-                <div className="event-body">
-                  <span className="pill">Christmas</span>
-                  <h3>Holiday Event 2026</h3>
-                  <div className="meta">
-                    <span>Dec 25, 2026</span>
-                    <span>0/2 purchased</span>
+                <div className="event-main">
+                  <div className="event-avatar">
+                    <span className="event-avatar-fallback">HE</span>
                   </div>
-                  <div className="progress">
-                    <span style={{ width: '10%' }}></span>
+                  <div className="event-summary">
+                    <h3>Holiday Event</h3>
+                    <p className="event-date">25 Dec 2026</p>
+                  </div>
+                </div>
+                <div className="event-divider"></div>
+                <div className="event-footer">
+                  <div className="event-stats">
+                    <p className="event-stat"><span className="event-stat-icon" aria-hidden="true">🎁</span><span>2 gifts planned</span></p>
+                    <p className="event-stat"><span className="event-stat-icon" aria-hidden="true">⏳</span><span>250 days left</span></p>
+                  </div>
+                  <div className="actions">
+                    <button className="ghost danger small event-delete" type="button">Delete</button>
                   </div>
                 </div>
               </article>
@@ -320,29 +387,36 @@ export default function Home() {
                   className="event-card"
                   onClick={() => navigate(`/event/${item.id}`)}
                 >
-                  <div className="event-cover">
-                    <img
-                      src={item.imageUrl ? resolveApiUrl(item.imageUrl) : defaultEventImage}
-                      alt={item.title}
-                      className="event-image"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = defaultEventImage;
-                      }}
-                    />
+                  <div className="event-main">
+                    <div className={`event-avatar ${item.imageUrl ? 'has-image' : ''}`}>
+                      <span className="event-avatar-fallback">{getEventInitials(item.title)}</span>
+                      {item.imageUrl ? (
+                        <img
+                          src={resolveApiUrl(item.imageUrl)}
+                          alt={item.title}
+                          className="event-avatar-image"
+                          onError={(e) => {
+                            const avatar = e.currentTarget.parentElement;
+                            avatar?.classList.remove('has-image');
+                            e.currentTarget.remove();
+                          }}
+                        />
+                      ) : null}
+                    </div>
+                    <div className="event-summary">
+                      <h3>{item.title}</h3>
+                      <p className="event-date">{formatEventDate(item.eventDate)}</p>
+                    </div>
                   </div>
-                  <div className="event-body">
-                    <span className="pill">{item.expired ? 'Expired' : 'Event'}</span>
-                    <h3>{item.title}</h3>
-                    <div className="meta">
-                      <span>
-                        {item.eventDate || 'No date'}
-                        {item.expired ? ' · Expired' : ''}
-                      </span>
+                  <div className="event-divider"></div>
+                  <div className="event-footer">
+                    <div className="event-stats">
+                      <p className="event-stat"><span className="event-stat-icon" aria-hidden="true">🎁</span><span>{formatGiftCount(item.giftCount)}</span></p>
+                      <p className="event-stat"><span className="event-stat-icon" aria-hidden="true">⏳</span><span>{formatDaysLeft(item)}</span></p>
                     </div>
                     <div className="actions">
                       <button
-                        className="ghost small danger"
+                        className="ghost danger small event-delete"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteEvent(item.id);

@@ -92,7 +92,9 @@ public class EventPublicController {
                 event.isSurpriseMode(),
                 event.isRevealUnlocked(),
                 event.getRevealAt(),
-                eventService.isExpired(event)
+                eventService.isExpired(event),
+                eventService.getGiftCountForEvent(event.getId()),
+                eventService.getDaysUntil(event)
         );
     }
 
