@@ -389,7 +389,6 @@ export default function Home() {
                 >
                   <div className="event-main">
                     <div className={`event-avatar ${item.imageUrl ? 'has-image' : ''}`}>
-                      <span className="event-avatar-fallback">{getEventInitials(item.title)}</span>
                       {item.imageUrl ? (
                         <img
                           src={resolveApiUrl(item.imageUrl)}
@@ -401,7 +400,9 @@ export default function Home() {
                             e.currentTarget.remove();
                           }}
                         />
-                      ) : null}
+                      ) : (
+                        <span className="event-avatar-fallback">{getEventInitials(item.title)}</span>
+                      )}
                     </div>
                     <div className="event-summary">
                       <h3>{item.title}</h3>

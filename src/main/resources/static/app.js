@@ -256,10 +256,10 @@ function renderMyEvents(items) {
       <article class="event-card" data-event-id="${item.id}">
         <div class="event-main">
           <div class="event-avatar ${item.imageUrl ? "has-image" : ""}">
-            <span class="event-avatar-fallback">${escapeHtml(getEventInitials(item.title))}</span>
             ${item.imageUrl
               ? `<img src="${escapeHtml(resolveImageUrl(item.imageUrl))}" alt="${escapeHtml(item.title)}" class="event-avatar-image" onerror="this.remove();this.parentElement.classList.remove('has-image');">`
-              : ""}
+              : `<span class="event-avatar-fallback">${escapeHtml(getEventInitials(item.title))}</span>`
+            }
           </div>
           <div class="event-summary">
             <h3>${escapeHtml(item.title)}</h3>
